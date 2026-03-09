@@ -16,8 +16,11 @@ def compile_template(template: str) -> re.Pattern:
     escaped = re.escape(template)
 
     # Replace each escaped placeholder \{name\} with a named capture group
-    for name in placeholders:
+    # Last placeholder uses [^\n]+ (greedy, single line) so it captures to end-of-line
+    # without overshooting into trailing SMS content
+    for i, name in enumerate(placeholders):
         escaped_placeholder = re.escape("{" + name + "}")
-        escaped = escaped.replace(escaped_placeholder, f"(?P<{name}>.+?)", 1)
+        quantifier = ".+?" if i < len(placeholders) - 1 else "[^\\n]+"
+        escaped = escaped.replace(escaped_placeholder, f"(?P<{name}>{quantifier})", 1)
 
     return re.compile(escaped, re.DOTALL)

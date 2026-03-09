@@ -19,6 +19,7 @@ async def ingest_sms(
     payload: List[SmsIngestPayload],
     db: AsyncSession = Depends(get_db),
 ):
+    print(f"Received ingest request with {payload} SMS")
     if not payload:
         return IngestResponse(
             message="No SMS data provided",

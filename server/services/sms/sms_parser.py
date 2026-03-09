@@ -57,8 +57,27 @@ HDFC_PATTERNS = [
     },
 ]
 
+HDFC_MULTILINE_PATTERNS = [
+    # Sent (debit) multiline format
+    {
+        "template": compile_template(
+            "Sent Rs.{amount}\nFrom HDFC Bank A/C *{last4}\nTo {merchant}\nOn {date}\nRef {upi_ref}"
+        ),
+        "direction": "debit",
+        "bank": "HDFC",
+    },
+    # Received (credit) multiline format
+    {
+        "template": compile_template(
+            "Received Rs.{amount}\nIn HDFC Bank A/C *{last4}\nFrom {merchant}\nOn {date}\nRef {upi_ref}"
+        ),
+        "direction": "credit",
+        "bank": "HDFC",
+    },
+]
+
 BANK_SENDER_MAP = {
-    "HDFCBK": HDFC_PATTERNS,
+    "HDFCBK": HDFC_MULTILINE_PATTERNS + HDFC_PATTERNS,
 }
 
 
@@ -71,11 +90,14 @@ def _identify_bank(sender: str) -> list | None:
 
 
 def _parse_date(date_str: str) -> date:
-    """Parse date strings like '06-03-26' (DD-MM-YY)."""
-    try:
-        return datetime.strptime(date_str.strip(), "%d-%m-%y").date()
-    except ValueError as e:
-        raise DateParseError(date_str) from e
+    """Parse date strings like '06-03-26' (DD-MM-YY) or '06/03/26' (DD/MM/YY)."""
+    stripped = date_str.strip()
+    for fmt in ("%d-%m-%y", "%d/%m/%y"):
+        try:
+            return datetime.strptime(stripped, fmt).date()
+        except ValueError:
+            continue
+    raise DateParseError(date_str)
 
 
 def parse_sms(sender: str, body: str) -> ParsedSMS | None:
