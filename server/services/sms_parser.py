@@ -1,8 +1,12 @@
+import logging
 from dataclasses import dataclass
 from datetime import date, datetime
 from typing import Optional
 
+from exceptions import DateParseError
 from services.template_engine import compile_template
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -68,7 +72,10 @@ def _identify_bank(sender: str) -> list | None:
 
 def _parse_date(date_str: str) -> date:
     """Parse date strings like '06-03-26' (DD-MM-YY)."""
-    return datetime.strptime(date_str.strip(), "%d-%m-%y").date()
+    try:
+        return datetime.strptime(date_str.strip(), "%d-%m-%y").date()
+    except ValueError as e:
+        raise DateParseError(date_str) from e
 
 
 def parse_sms(sender: str, body: str) -> ParsedSMS | None:
@@ -88,8 +95,12 @@ def parse_sms(sender: str, body: str) -> ParsedSMS | None:
             if "date" in groups:
                 try:
                     tx_date = _parse_date(groups["date"])
-                except ValueError:
-                    pass
+                except DateParseError:
+                    logger.warning(
+                        "Could not parse date %r from sender=%s, continuing with tx_date=None",
+                        groups["date"],
+                        sender,
+                    )
 
             vpa = groups.get("vpa")
             merchant_raw = groups.get("merchant") or vpa
