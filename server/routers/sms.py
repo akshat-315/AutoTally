@@ -1,37 +1,26 @@
 from fastapi import APIRouter, Depends
 from typing import List
-from fastapi.responses import JSONResponse
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from schemas import SmsIngestPaylod
-from server.database.db import get_db
+from schemas import SmsIngestPayload, IngestResponse
+from database.db import get_db
+from services.sms_service import process_sms_batch
 
 router = APIRouter(prefix="/api/v1/sms", tags=["sms"])
 
-router.post("/ingest", tags=["ingest"])
+
+@router.post("/ingest", response_model=IngestResponse)
 async def ingest_sms(
-        payload: List[SmsIngestPaylod],
-        AsyncSession = Depends(get_db)
+    payload: List[SmsIngestPayload],
+    db: AsyncSession = Depends(get_db),
 ):
-    """
-    Ingest SMS data coming from the user's device via Termux
-    """
     if not payload:
-        return JSONResponse(
-            content={"message": "No SMS data provided"}, status_code=400
+        return IngestResponse(
+            message="No SMS data provided",
+            processed=0,
+            skipped=0,
+            failed=0,
+            errors=[],
         )
-    
-    # Assuming the SmsIngestPaylod is in this format:
-    # {
-    #     "address": "JX-HDFCBK-S",
-    #     "received": "2026-03-06 20:09:57",
-    #     "body": "Credit Alert!\nRs.71.00 credited to HDFC Bank A/c XX4273 on 06-03-26 from VPA eraparmar00@okhdfcbank (UPI 119609013791)\n",
-    # }
 
-    # Convert the received payload into appropriate format to store in the database
-
-
-    # Save the data to the database
-
-    return JSONResponse(content={"message": "SMS data ingested successfully"}, status_code=200)
-
-    
+    return await process_sms_batch(payload, db)

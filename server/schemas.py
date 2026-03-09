@@ -1,10 +1,19 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+from typing import List
 
-class SmsIngestPaylod(BaseModel):
+
+class SmsIngestPayload(BaseModel):
+    id: int = Field(alias="_id")
     address: str
     received: str
     body: str
 
-class SmsDbFormat(BaseModel):
-    transaction_type: str
-    amount: float
+    model_config = {"populate_by_name": True}
+
+
+class IngestResponse(BaseModel):
+    message: str
+    processed: int
+    skipped: int
+    failed: int
+    errors: List[str]
