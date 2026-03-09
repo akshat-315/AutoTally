@@ -3,12 +3,7 @@ from datetime import datetime, timezone
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from database.models import Transaction, Merchant
-
-
-async def get_transaction_by_sms_id(db: AsyncSession, sms_id: int) -> Transaction | None:
-    result = await db.execute(select(Transaction).where(Transaction.sms_id == sms_id))
-    return result.scalar_one_or_none()
+from database.models import Merchant
 
 
 async def get_or_create_merchant(db: AsyncSession, raw_name: str) -> Merchant:
@@ -28,9 +23,3 @@ async def get_or_create_merchant(db: AsyncSession, raw_name: str) -> Merchant:
     db.add(merchant)
     await db.flush()
     return merchant
-
-
-async def create_transaction(db: AsyncSession, **kwargs) -> Transaction:
-    transaction = Transaction(**kwargs)
-    db.add(transaction)
-    return transaction
