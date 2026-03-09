@@ -40,6 +40,12 @@ class Merchant(Base):
 
 class Transaction(Base):
     __tablename__ = "transactions"
+    __table_args__ = (
+        Index("ix_transactions_date", "transaction_date"),
+        Index("ix_transactions_direction_date", "direction", "transaction_date"),
+        Index("ix_transactions_category_date", "category_id", "transaction_date"),
+        Index("ix_transactions_merchant_date", "merchant_id", "transaction_date"),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True)
     sms_id: Mapped[int] = mapped_column(Integer, unique=True, index=True)

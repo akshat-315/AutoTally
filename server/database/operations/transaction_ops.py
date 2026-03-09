@@ -1,10 +1,18 @@
 import logging
+import math
+from datetime import date
+from typing import Optional
 
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from database.models import Transaction
+from database.models import Transaction, Merchant, Category
+from database.operations.dashboard_ops import (
+    resolve_date_range,
+    _collect_merchant_ids,
+    _transaction_to_dict,
+)
 from exceptions import DatabaseError
 
 logger = logging.getLogger(__name__)
@@ -28,3 +36,95 @@ async def create_transaction(db: AsyncSession, **kwargs) -> Transaction:
         sms_id = kwargs.get("sms_id", "unknown")
         logger.error("Database error creating transaction for sms_id=%s: %s", sms_id, e)
         raise DatabaseError("create_transaction", original=e) from e
+
+
+async def get_transactions_paginated(
+    db: AsyncSession,
+    start_date: Optional[date] = None,
+    end_date: Optional[date] = None,
+    direction: Optional[str] = None,
+    category_id: Optional[int] = None,
+    merchant_id: Optional[int] = None,
+    bank: Optional[str] = None,
+    min_amount: Optional[float] = None,
+    max_amount: Optional[float] = None,
+    search: Optional[str] = None,
+    sort_by: str = "date",
+    sort_order: str = "desc",
+    page: int = 1,
+    per_page: int = 20,
+) -> dict:
+    start, end = resolve_date_range(start_date, end_date)
+    try:
+        filters = [
+            Transaction.transaction_date >= start,
+            Transaction.transaction_date <= end,
+        ]
+
+        if direction:
+            filters.append(Transaction.direction == direction)
+        if category_id is not None:
+            filters.append(Transaction.category_id == category_id)
+        if merchant_id is not None:
+            all_ids = await _collect_merchant_ids(db, merchant_id)
+            filters.append(Transaction.merchant_id.in_(all_ids))
+        if bank:
+            filters.append(Transaction.bank == bank)
+        if min_amount is not None:
+            filters.append(Transaction.amount >= min_amount)
+        if max_amount is not None:
+            filters.append(Transaction.amount <= max_amount)
+        if search:
+            filters.append(Transaction.merchant_raw.ilike(f"%{search}%"))
+
+        # Count query
+        count_stmt = select(func.count(Transaction.id)).where(*filters)
+        total_count = (await db.execute(count_stmt)).scalar() or 0
+        total_pages = max(1, math.ceil(total_count / per_page))
+        offset = (page - 1) * per_page
+
+        # Sort
+        if sort_by == "amount":
+            order_col = Transaction.amount
+        else:
+            order_col = Transaction.transaction_date
+
+        if sort_order == "asc":
+            order_expr = order_col.asc()
+        else:
+            order_expr = order_col.desc()
+
+        tx_stmt = (
+            select(
+                Transaction,
+                Merchant.name.label("merchant_name"),
+                Merchant.display_name.label("merchant_display_name"),
+                Category.name.label("category_name"),
+            )
+            .outerjoin(Merchant, Merchant.id == Transaction.merchant_id)
+            .outerjoin(Category, Category.id == Transaction.category_id)
+            .where(*filters)
+            .order_by(order_expr, Transaction.id.desc())
+            .offset(offset)
+            .limit(per_page)
+        )
+
+        result = await db.execute(tx_stmt)
+        rows = result.all()
+
+        transactions = [
+            _transaction_to_dict(tx, m_name, m_display, c_name)
+            for tx, m_name, m_display, c_name in rows
+        ]
+
+        return {
+            "transactions": transactions,
+            "pagination": {
+                "page": page,
+                "per_page": per_page,
+                "total_count": total_count,
+                "total_pages": total_pages,
+            },
+        }
+    except SQLAlchemyError as e:
+        raise DatabaseError("get_transactions_paginated", original=e) from e

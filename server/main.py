@@ -8,7 +8,7 @@ from pydantic import ValidationError
 from database.db import init_db
 from exceptions import AutoTallyError, DatabaseError, StartupError
 from logging_config import setup_logging
-from routers import sms, merchants, categories
+from routers import sms, merchants, categories, dashboard, transactions
 
 logger = logging.getLogger(__name__)
 
@@ -29,6 +29,8 @@ app = FastAPI(title="AutoTally", lifespan=lifespan)
 app.include_router(sms.router)
 app.include_router(merchants.router)
 app.include_router(categories.router)
+app.include_router(dashboard.router)
+app.include_router(transactions.router)
 
 
 @app.exception_handler(AutoTallyError)
