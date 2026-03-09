@@ -1,5 +1,5 @@
 {
   "server_url": "https://ungrieving-supervast-claude.ngrok-free.dev",
-  "addresses": ["HDFCBK"],
-  "limit": 10
+  "limit": 10,
+  "last_sms_id": 0
 }

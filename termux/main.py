@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Fetch SMS from Termux and forward to AutoTally server."""
 
+import bisect
 import json
 import subprocess
 import sys
@@ -81,11 +82,17 @@ def main():
     config = load_config()
     server_url = config["server_url"]
     limit = config.get("limit", 100)
+    last_sms_id = config.get("last_sms_id", 0)
 
     sms_list = fetch_sms(limit)
     print(f"Fetched {len(sms_list)} SMS from Termux")
 
-    payload = map_sms(sms_list)
+    sms_list.sort(key=lambda s: s["_id"])
+    ids = [sms["_id"] for sms in sms_list]
+    cutoff = bisect.bisect_right(ids, last_sms_id)
+    new_sms = sms_list[cutoff:]
+
+    payload = map_sms(new_sms)
 
     if not payload:
         print("Nothing to forward.")
