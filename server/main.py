@@ -31,15 +31,12 @@ app.include_router(sms.router)
 
 @app.exception_handler(AutoTallyError)
 async def autotally_error_handler(request: Request, exc: AutoTallyError) -> JSONResponse:
-    if isinstance(exc, DatabaseError):
-        logger.error("DatabaseError: %s", exc)
-        return JSONResponse(
-            status_code=500,
-            content={"error": "InternalServerError", "detail": str(exc)},
-        )
-    logger.warning("Business error: %s", exc)
+    if exc.status_code >= 500:
+        logger.error("%s: %s", type(exc).__name__, exc)
+    else:
+        logger.warning("Business error: %s", exc)
     return JSONResponse(
-        status_code=422,
+        status_code=exc.status_code,
         content={"error": type(exc).__name__, "detail": str(exc)},
     )
 

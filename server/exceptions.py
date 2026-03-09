@@ -1,5 +1,6 @@
 class AutoTallyError(Exception):
     """Base exception for all AutoTally errors."""
+    status_code: int = 422
 
 
 class SMSParseError(AutoTallyError):
@@ -29,6 +30,8 @@ class DuplicateSMSError(AutoTallyError):
 
 class DatabaseError(AutoTallyError):
     """Wraps SQLAlchemy errors so upper layers don't import sqlalchemy.exc."""
+
+    status_code: int = 500
 
     def __init__(self, operation: str, *, original: Exception | None = None):
         self.operation = operation
