@@ -5,8 +5,11 @@ from typing import Optional
 
 from exceptions import DateParseError
 from services.sms.template_loader import load_templates
+from services.template_engine import fuzzy_match
 
 logger = logging.getLogger(__name__)
+
+MATCH_CONFIDENCE_THRESHOLD = 0.90
 
 
 @dataclass
@@ -48,37 +51,52 @@ def parse_sms(sender: str, body: str) -> ParsedSMS | None:
     if not patterns:
         return None
 
+    best_result = None
+    best_confidence = 0.0
+    best_pattern = None
+
     for pattern_def in patterns:
-        match = pattern_def["template"].search(body)
-        if match:
-            groups = match.groupdict()
+        result = fuzzy_match(pattern_def["template"], body)
+        if result and result.confidence > best_confidence:
+            best_result = result
+            best_confidence = result.confidence
+            best_pattern = pattern_def
 
-            amount_str = groups.get("amount", "0")
-            amount = float(amount_str.replace(",", ""))
+    if not best_result or best_confidence < MATCH_CONFIDENCE_THRESHOLD:
+        return None
 
-            tx_date = None
-            if "date" in groups:
-                try:
-                    tx_date = _parse_date(groups["date"])
-                except DateParseError:
-                    logger.warning(
-                        "Could not parse date %r from sender=%s, continuing with tx_date=None",
-                        groups["date"],
-                        sender,
-                    )
+    logger.debug(
+        "Matched template with confidence=%.3f for sender=%s",
+        best_confidence,
+        sender,
+    )
 
-            vpa = groups.get("vpa")
-            merchant_raw = groups.get("merchant") or vpa
+    groups = best_result.groups
 
-            return ParsedSMS(
-                direction=pattern_def["direction"],
-                amount=amount,
-                bank=pattern_def["bank"],
-                account_last4=groups.get("last4"),
-                merchant_raw=merchant_raw,
-                vpa=vpa,
-                upi_ref=groups.get("upi_ref"),
-                transaction_date=tx_date,
+    amount_str = groups.get("amount", "0")
+    amount = float(amount_str.replace(",", ""))
+
+    tx_date = None
+    if "date" in groups:
+        try:
+            tx_date = _parse_date(groups["date"])
+        except DateParseError:
+            logger.warning(
+                "Could not parse date %r from sender=%s, continuing with tx_date=None",
+                groups["date"],
+                sender,
             )
 
-    return None
+    vpa = groups.get("vpa")
+    merchant_raw = groups.get("merchant") or vpa
+
+    return ParsedSMS(
+        direction=best_pattern["direction"],
+        amount=amount,
+        bank=best_pattern["bank"],
+        account_last4=groups.get("last4"),
+        merchant_raw=merchant_raw,
+        vpa=vpa,
+        upi_ref=groups.get("upi_ref"),
+        transaction_date=tx_date,
+    )

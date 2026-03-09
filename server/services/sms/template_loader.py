@@ -4,7 +4,7 @@ from pathlib import Path
 
 import yaml
 
-from services.template_engine import compile_template
+from services.template_engine import parse_template
 
 TEMPLATES_PATH = Path(__file__).parent / "sms_templates.yaml"
 
@@ -19,7 +19,7 @@ def load_templates() -> dict[str, list[dict]]:
         patterns = []
         for tmpl in config["templates"]:
             patterns.append({
-                "template": compile_template(tmpl["pattern"]),
+                "template": parse_template(tmpl["pattern"]),
                 "direction": tmpl["direction"],
                 "bank": config["bank"],
             })
