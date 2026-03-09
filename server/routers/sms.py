@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from database.db import get_db
-from exceptions import AutoTallyError, DatabaseError, DuplicateSMSError
+from exceptions import AutoTallyError, DatabaseError, DuplicateSMSError, UnmatchedSMSError
 from schemas import IngestResponse, SmsIngestPayload
 from services.sms.sms_service import process_single_sms
 
@@ -24,12 +24,14 @@ async def ingest_sms(
         return IngestResponse(
             message="No SMS data provided",
             processed=0,
+            ignored=0,
             skipped=0,
             failed=0,
             errors=[],
         )
 
     processed = 0
+    ignored = 0
     skipped = 0
     failed = 0
     errors: list[str] = []
@@ -38,6 +40,8 @@ async def ingest_sms(
         try:
             await process_single_sms(sms, db)
             processed += 1
+        except UnmatchedSMSError:
+            ignored += 1
         except DuplicateSMSError:
             skipped += 1
         except DatabaseError as e:
@@ -48,18 +52,19 @@ async def ingest_sms(
             logger.warning("Failed to process sms_id=%s: %s", sms.id, e)
             failed += 1
             errors.append(str(e))
-    
-    if errors:
+
+    if failed > 0:
         logger.info(
-            "Ingest completed with errors: %d processed, %d skipped, %d failed. Errors: %s",
+            "Ingest completed with errors: %d processed, %d ignored, %d skipped, %d failed. Errors: %s",
             processed,
+            ignored,
             skipped,
             failed,
             errors,
         )
         raise AutoTallyError(
-            f"Ingest completed with errors: {processed} processed, {skipped} skipped, {failed} failed. Errors: {errors}",
-            status_code=422
+            f"Ingest completed with errors: {processed} processed, {ignored} ignored, {skipped} skipped, {failed} failed. Errors: {errors}",
+            status_code=422,
         )
 
     try:
@@ -70,8 +75,9 @@ async def ingest_sms(
         raise DatabaseError("batch_commit", original=e) from e
 
     return IngestResponse(
-        message=f"Ingested {processed} SMS, skipped {skipped}, failed {failed}",
+        message=f"Ingested {processed} SMS, ignored {ignored}, skipped {skipped}, failed {failed}",
         processed=processed,
+        ignored=ignored,
         skipped=skipped,
         failed=failed,
         errors=errors,

@@ -1,0 +1,9 @@
+# SMS Templates Configuration
+# Each top-level key is a sender ID substring (matched case-insensitively against the SMS sender).
+# To add a new bank or SMS format, just add entries here — no Termux or Python changes needed.
+
+HDFCBK:
+  bank: HDFC
+  templates:
+    - direction: debit
+      pattern: "Credit Alert!\nRs.{amount} credited to HDFC Bank A/c XX{last4} on {date} from VPA {vpa} (UPI {upi_ref})"

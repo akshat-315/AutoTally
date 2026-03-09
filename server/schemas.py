@@ -14,6 +14,7 @@ class SmsIngestPayload(BaseModel):
 class IngestResponse(BaseModel):
     message: str
     processed: int
+    ignored: int
     skipped: int
     failed: int
     errors: List[str]

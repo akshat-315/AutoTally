@@ -6,6 +6,14 @@ class AutoTallyError(Exception):
         super().__init__(detail)
 
 
+class UnmatchedSMSError(AutoTallyError):
+    """SMS does not match any known bank pattern."""
+
+    def __init__(self, sms_id: int):
+        self.sms_id = sms_id
+        super().__init__(f"sms_id={sms_id}: no matching bank pattern")
+
+
 class SMSParseError(AutoTallyError):
     """SMS body could not be parsed."""
 

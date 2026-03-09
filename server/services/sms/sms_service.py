@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from database.operations.merchant_ops import get_or_create_merchant
 from database.operations.transaction_ops import create_transaction, get_transaction_by_sms_id
-from exceptions import AutoTallyError, DuplicateSMSError
+from exceptions import DuplicateSMSError, UnmatchedSMSError
 from schemas import SmsIngestPayload
 from services.sms.sms_parser import parse_sms
 from services.sms.sms_processor import parse_received_timestamp
@@ -19,7 +19,7 @@ async def process_single_sms(sms: SmsIngestPayload, db: AsyncSession) -> None:
 
     parsed = parse_sms(sms.address, sms.body)
     if not parsed:
-        raise AutoTallyError(f"sms_id={sms.id}: could not parse SMS body")
+        raise UnmatchedSMSError(sms.id)
 
     sms_received_at = parse_received_timestamp(sms.received)
 

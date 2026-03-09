@@ -1,5 +1,4 @@
 {
   "server_url": "http://<server-ip>:8000",
-  "addresses": ["HDFCBK"],
-  "limit": 10
+  "limit": 100
 }

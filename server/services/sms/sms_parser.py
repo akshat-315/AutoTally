@@ -4,7 +4,7 @@ from datetime import date, datetime
 from typing import Optional
 
 from exceptions import DateParseError
-from services.template_engine import compile_template
+from services.sms.template_loader import load_templates
 
 logger = logging.getLogger(__name__)
 
@@ -21,64 +21,7 @@ class ParsedSMS:
     transaction_date: Optional[date] = None
 
 
-# HDFC Bank SMS templates
-HDFC_PATTERNS = [
-    # Credit via UPI with VPA
-    {
-        "template": compile_template(
-            "Rs.{amount} credited to HDFC Bank A/c XX{last4} on {date} from VPA {vpa} (UPI {upi_ref})"
-        ),
-        "direction": "credit",
-        "bank": "HDFC",
-    },
-    # Debit via UPI with VPA
-    {
-        "template": compile_template(
-            "Rs.{amount} debited from HDFC Bank A/c XX{last4} on {date} to VPA {vpa} (UPI {upi_ref})"
-        ),
-        "direction": "debit",
-        "bank": "HDFC",
-    },
-    # Credit via UPI with merchant name (no VPA)
-    {
-        "template": compile_template(
-            "Rs.{amount} credited to HDFC Bank A/c XX{last4} on {date} by {merchant} (UPI {upi_ref})"
-        ),
-        "direction": "credit",
-        "bank": "HDFC",
-    },
-    # Debit via UPI with merchant name (no VPA)
-    {
-        "template": compile_template(
-            "Rs.{amount} debited from HDFC Bank A/c XX{last4} on {date} to {merchant} (UPI {upi_ref})"
-        ),
-        "direction": "debit",
-        "bank": "HDFC",
-    },
-]
-
-HDFC_MULTILINE_PATTERNS = [
-    # Sent (debit) multiline format
-    {
-        "template": compile_template(
-            "Sent Rs.{amount}\nFrom HDFC Bank A/C *{last4}\nTo {merchant}\nOn {date}\nRef {upi_ref}"
-        ),
-        "direction": "debit",
-        "bank": "HDFC",
-    },
-    # Received (credit) multiline format
-    {
-        "template": compile_template(
-            "Received Rs.{amount}\nIn HDFC Bank A/C *{last4}\nFrom {merchant}\nOn {date}\nRef {upi_ref}"
-        ),
-        "direction": "credit",
-        "bank": "HDFC",
-    },
-]
-
-BANK_SENDER_MAP = {
-    "HDFCBK": HDFC_MULTILINE_PATTERNS + HDFC_PATTERNS,
-}
+BANK_SENDER_MAP = load_templates()
 
 
 def _identify_bank(sender: str) -> list | None:
@@ -90,9 +33,9 @@ def _identify_bank(sender: str) -> list | None:
 
 
 def _parse_date(date_str: str) -> date:
-    """Parse date strings like '06-03-26' (DD-MM-YY) or '06/03/26' (DD/MM/YY)."""
+    """Parse date strings in common Indian bank SMS formats."""
     stripped = date_str.strip()
-    for fmt in ("%d-%m-%y", "%d/%m/%y"):
+    for fmt in ("%d-%m-%y", "%d/%m/%y", "%d-%b-%y", "%d-%b-%Y", "%d %b %Y"):
         try:
             return datetime.strptime(stripped, fmt).date()
         except ValueError:

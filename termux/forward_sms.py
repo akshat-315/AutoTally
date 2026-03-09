@@ -46,19 +46,16 @@ def fetch_sms(limit):
     return json.loads(result.stdout)
 
 
-def filter_and_map(sms_list, addresses):
-    addresses_lower = [a.lower() for a in addresses]
-    filtered = []
-    for sms in sms_list:
-        number = sms.get("number", "").lower()
-        if any(addr in number for addr in addresses_lower):
-            filtered.append({
-                "_id": sms["_id"],
-                "address": sms["number"],
-                "received": sms["received"],
-                "body": sms["body"],
-            })
-    return filtered
+def map_sms(sms_list):
+    return [
+        {
+            "_id": sms["_id"],
+            "address": sms["number"],
+            "received": sms["received"],
+            "body": sms["body"],
+        }
+        for sms in sms_list
+    ]
 
 
 def forward_to_server(server_url, payload):
@@ -83,14 +80,12 @@ def forward_to_server(server_url, payload):
 def main():
     config = load_config()
     server_url = config["server_url"]
-    addresses = config["addresses"]
     limit = config.get("limit", 100)
 
     sms_list = fetch_sms(limit)
     print(f"Fetched {len(sms_list)} SMS from Termux")
 
-    payload = filter_and_map(sms_list, addresses)
-    print(f"Filtered to {len(payload)} SMS matching {addresses}")
+    payload = map_sms(sms_list)
 
     if not payload:
         print("Nothing to forward.")
