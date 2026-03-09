@@ -1,8 +1,11 @@
 import logging
+import os
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import ValidationError
 
 from database.db import init_db
@@ -25,6 +28,13 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="AutoTally", lifespan=lifespan)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 app.include_router(sms.router)
 app.include_router(merchants.router)
@@ -63,3 +73,9 @@ async def unhandled_error_handler(request: Request, exc: Exception) -> JSONRespo
         status_code=500,
         content={"error": "InternalServerError", "detail": "An unexpected error occurred"},
     )
+
+
+# Serve built frontend in production
+dist = os.path.join(os.path.dirname(__file__), "..", "dashboard", "dist")
+if os.path.exists(dist):
+    app.mount("/", StaticFiles(directory=dist, html=True), name="dashboard")
