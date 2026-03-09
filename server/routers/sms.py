@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from database.db import get_db
 from exceptions import AutoTallyError, DatabaseError, DuplicateSMSError
 from schemas import IngestResponse, SmsIngestPayload
-from server.services.sms.sms_service import process_single_sms
+from services.sms.sms_service import process_single_sms
 
 logger = logging.getLogger(__name__)
 

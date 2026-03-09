@@ -6,8 +6,8 @@ from database.operations.merchant_ops import get_or_create_merchant
 from database.operations.transaction_ops import create_transaction, get_transaction_by_sms_id
 from exceptions import AutoTallyError, DuplicateSMSError
 from schemas import SmsIngestPayload
-from server.services.sms.sms_parser import parse_sms
-from server.services.sms.sms_processor import parse_received_timestamp
+from services.sms.sms_parser import parse_sms
+from services.sms.sms_processor import parse_received_timestamp
 
 logger = logging.getLogger(__name__)
 
