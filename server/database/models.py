@@ -23,8 +23,13 @@ class Merchant(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String, unique=True, index=True)
+    display_name: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    vpa: Mapped[Optional[str]] = mapped_column(String, nullable=True, index=True)
     category_id: Mapped[Optional[int]] = mapped_column(
         Integer, ForeignKey("categories.id"), nullable=True
+    )
+    primary_merchant_id: Mapped[Optional[int]] = mapped_column(
+        Integer, ForeignKey("merchants.id"), nullable=True
     )
     is_confirmed: Mapped[bool] = mapped_column(Boolean, default=False)
     times_confirmed: Mapped[int] = mapped_column(Integer, default=0)

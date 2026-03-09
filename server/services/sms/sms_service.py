@@ -26,7 +26,7 @@ async def process_single_sms(sms: SmsIngestPayload, db: AsyncSession) -> None:
     merchant_id = None
     category_id = None
     if parsed.merchant_raw:
-        merchant = await get_or_create_merchant(db, parsed.merchant_raw)
+        merchant = await get_or_create_merchant(db, parsed.merchant_raw, vpa=parsed.vpa)
         merchant_id = merchant.id
         category_id = merchant.category_id
 
