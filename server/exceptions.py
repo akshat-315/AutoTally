@@ -1,6 +1,9 @@
 class AutoTallyError(Exception):
     """Base exception for all AutoTally errors."""
-    status_code: int = 422
+    def __init__(self, detail: str = "", status_code: int = 422):
+        self.detail = detail
+        self.status_code = status_code
+        super().__init__(detail)
 
 
 class SMSParseError(AutoTallyError):

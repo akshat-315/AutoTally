@@ -15,5 +15,4 @@ def setup_logging() -> None:
     root.setLevel(logging.INFO)
     root.addHandler(handler)
 
-    # Quiet SQLAlchemy's noisy query logging
     logging.getLogger("sqlalchemy.engine").setLevel(logging.WARNING)
