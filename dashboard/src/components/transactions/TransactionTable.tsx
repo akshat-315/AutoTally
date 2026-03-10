@@ -40,7 +40,9 @@ export default function TransactionTable({
 }: Props) {
   const navigate = useNavigate();
   const [categories, setCategories] = useState<Category[]>([]);
-  const [overrides, setOverrides] = useState<Record<number, { category_id: number | null; category_name: string | null }>>({});
+  const [overrides, setOverrides] = useState<
+    Record<number, { category_id: number | null; category_name: string | null }>
+  >({});
 
   useEffect(() => {
     fetchCategories().then(setCategories);
@@ -91,7 +93,10 @@ export default function TransactionTable({
           <TableBody>
             {transactions.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                <TableCell
+                  colSpan={6}
+                  className="text-center py-8 text-muted-foreground"
+                >
                   No transactions found
                 </TableCell>
               </TableRow>
@@ -99,7 +104,9 @@ export default function TransactionTable({
               transactions.map((tx) => {
                 const override = overrides[tx.id];
                 const catId = override ? override.category_id : tx.category_id;
-                const catName = override ? override.category_name : tx.category_name;
+                const catName = override
+                  ? override.category_name
+                  : tx.category_name;
 
                 return (
                   <TableRow key={tx.id}>
@@ -107,7 +114,11 @@ export default function TransactionTable({
                       {formatDate(tx.transaction_date)}
                     </TableCell>
                     <TableCell>
-                      <Badge variant={tx.direction === "debit" ? "destructive" : "default"}>
+                      <Badge
+                        variant={
+                          tx.direction === "debit" ? "destructive" : "default"
+                        }
+                      >
                         {tx.direction}
                       </Badge>
                     </TableCell>
@@ -118,9 +129,14 @@ export default function TransactionTable({
                       {tx.merchant_id ? (
                         <button
                           className="text-sm hover:underline text-left"
-                          onClick={() => navigate(`/merchant/${tx.merchant_id}`)}
+                          onClick={() =>
+                            navigate(`/merchant/${tx.merchant_id}`)
+                          }
                         >
-                          {tx.merchant_display_name || tx.merchant_name || tx.merchant_raw || "-"}
+                          {tx.merchant_display_name ||
+                            tx.merchant_name ||
+                            tx.merchant_raw ||
+                            "-"}
                         </button>
                       ) : (
                         <span className="text-sm text-muted-foreground">
@@ -131,7 +147,9 @@ export default function TransactionTable({
                     <TableCell>
                       <Select
                         value={catId != null ? String(catId) : "__none__"}
-                        onValueChange={(val) => handleCategoryChange(tx.id, val)}
+                        onValueChange={(val) =>
+                          val && handleCategoryChange(tx.id, val)
+                        }
                       >
                         <SelectTrigger size="sm" className="min-w-[120px]">
                           <SelectValue>
@@ -140,15 +158,20 @@ export default function TransactionTable({
                                 {catName}
                               </Badge>
                             ) : (
-                              <span className="text-muted-foreground text-xs">Uncategorized</span>
+                              <span className="text-muted-foreground text-xs">
+                                Uncategorized
+                              </span>
                             )}
                           </SelectValue>
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="__none__">Uncategorized</SelectItem>
+                          <SelectItem value="__none__">
+                            Uncategorized
+                          </SelectItem>
                           {categories.map((c) => (
                             <SelectItem key={c.id} value={String(c.id)}>
-                              {c.icon ? `${c.icon} ` : ""}{c.name}
+                              {c.icon ? `${c.icon} ` : ""}
+                              {c.name}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -166,7 +189,8 @@ export default function TransactionTable({
       {pagination.total_pages > 1 && (
         <div className="flex items-center justify-between mt-4">
           <p className="text-sm text-muted-foreground">
-            Page {pagination.page} of {pagination.total_pages} ({pagination.total_count} total)
+            Page {pagination.page} of {pagination.total_pages} (
+            {pagination.total_count} total)
           </p>
           <div className="flex gap-2">
             <Button
