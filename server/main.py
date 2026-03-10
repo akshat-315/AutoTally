@@ -32,7 +32,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="AutoTally", lifespan=lifespan)
 
-origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173").split(",")
+origins = [o.strip() for o in os.getenv("ALLOWED_ORIGINS", "http://localhost:5173").split(",")]
 
 app.add_middleware(
     CORSMiddleware,
