@@ -30,16 +30,28 @@ def _save_sms_logs(
     failed_list: list[dict],
 ) -> None:
     SMS_LOGS_DIR.mkdir(exist_ok=True)
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    date_str = datetime.now().strftime("%Y%m%d")
+    cutoff = datetime.now().timestamp() - 30 * 24 * 3600
+
+    for stale in SMS_LOGS_DIR.glob("*.json"):
+        if stale.stat().st_mtime < cutoff:
+            stale.unlink()
+
     for name, data in [
         ("processed", processed_list),
         ("ignored", ignored_list),
         ("skipped", skipped_list),
         ("failed", failed_list),
     ]:
-        filepath = SMS_LOGS_DIR / f"{name}_{timestamp}.json"
+        if not data:
+            continue
+        filepath = SMS_LOGS_DIR / f"{name}_{date_str}.json"
+        existing: list[dict] = []
+        if filepath.exists():
+            with open(filepath) as f:
+                existing = json.load(f)
         with open(filepath, "w") as f:
-            json.dump(data, f, indent=2, ensure_ascii=False)
+            json.dump(data + existing, f, indent=2, ensure_ascii=False)
 
 
 @router.post("/ingest", response_model=IngestResponse)
@@ -47,7 +59,6 @@ async def ingest_sms(
     payload: List[SmsIngestPayload],
     db: AsyncSession = Depends(get_db),
 ):
-    print(f"Received ingest request with {payload} SMS")
     if not payload:
         return IngestResponse(
             message="No SMS data provided",
@@ -88,7 +99,7 @@ async def ingest_sms(
         except AutoTallyError as e:
             logger.warning("Failed to process sms_id=%s: %s", sms.id, e)
             failed += 1
-            errors.append(str(e))
+            errors.append(f"sms_id={sms.id}: {e}")
             failed_list.append({**_sms_to_dict(sms), "error": str(e)})
 
     _save_sms_logs(processed_list, ignored_list, skipped_list, failed_list)
