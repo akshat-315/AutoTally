@@ -25,6 +25,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy backend source code
 COPY server/ .
 
+# Ensure data directory exists for SQLite DB
+RUN mkdir -p /app/server/data
+
 # Copy the built frontend from Stage 1 into the right place
 # FastAPI looks for ../dashboard/dist relative to server/
 COPY --from=frontend-builder /app/dashboard/dist ../dashboard/dist
