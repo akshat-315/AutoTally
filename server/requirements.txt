@@ -6,3 +6,4 @@ aiosqlite
 greenlet
 pyyaml
 rapidfuzz
+python-telegram-bot>=21.0

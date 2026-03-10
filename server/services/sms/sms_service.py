@@ -3,6 +3,7 @@ from datetime import datetime
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from database.operations.category_ops import get_category_by_id
 from database.operations.merchant_ops import get_or_create_merchant
 from database.operations.transaction_ops import create_transaction, get_transaction_by_sms_id
 from exceptions import DuplicateSMSError, UnmatchedSMSError
@@ -20,7 +21,7 @@ def _parse_received_timestamp(received: str) -> datetime | None:
         return None
 
 
-async def process_single_sms(sms: SmsIngestPayload, db: AsyncSession) -> None:
+async def process_single_sms(sms: SmsIngestPayload, db: AsyncSession) -> dict:
     existing = await get_transaction_by_sms_id(db, sms.id)
     if existing:
         raise DuplicateSMSError(sms.id)
@@ -39,9 +40,11 @@ async def process_single_sms(sms: SmsIngestPayload, db: AsyncSession) -> None:
     merchant_id = None
     category_id = None
     category_source = None
+    merchant_name = parsed.merchant_raw
     if parsed.merchant_raw:
         merchant = await get_or_create_merchant(db, parsed.merchant_raw, vpa=parsed.vpa)
         merchant_id = merchant.id
+        merchant_name = merchant.name
         category_id = merchant.category_id
         if category_id:
             category_source = "confirmed" if merchant.is_confirmed else merchant.source
@@ -64,3 +67,19 @@ async def process_single_sms(sms: SmsIngestPayload, db: AsyncSession) -> None:
         sms_sender=sms.address,
         sms_received_at=sms_received_at,
     )
+
+    # Resolve category name for notification
+    category_name = None
+    if category_id:
+        cat = await get_category_by_id(db, category_id)
+        category_name = cat.name if cat else None
+
+    return {
+        "amount": parsed.amount,
+        "direction": parsed.direction,
+        "merchant_name": merchant_name,
+        "merchant_id": merchant_id,
+        "bank": parsed.bank,
+        "category_name": category_name,
+        "category_id": category_id,
+    }

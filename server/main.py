@@ -11,6 +11,7 @@ from pydantic import ValidationError
 from database.db import init_db
 from exceptions import AutoTallyError, DatabaseError, StartupError
 from logging_config import setup_logging
+from services.telegram.bot import start_bot, stop_bot
 from routers import sms, merchants, categories, dashboard, transactions
 
 logger = logging.getLogger(__name__)
@@ -23,8 +24,10 @@ async def lifespan(app: FastAPI):
         await init_db()
     except Exception as e:
         raise StartupError(f"Failed to initialize database: {e}") from e
+    await start_bot()
     logger.info("AutoTally started")
     yield
+    await stop_bot()
 
 
 app = FastAPI(title="AutoTally", lifespan=lifespan)

@@ -79,12 +79,14 @@ async def ingest_sms(
     ignored_list: list[dict] = []
     skipped_list: list[dict] = []
     failed_list: list[dict] = []
+    notification_data: list[dict] = []
 
     for sms in payload:
         try:
-            await process_single_sms(sms, db)
+            tx_info = await process_single_sms(sms, db)
             processed += 1
             processed_list.append(_sms_to_dict(sms))
+            notification_data.append(tx_info)
         except UnmatchedSMSError:
             ignored += 1
             ignored_list.append(_sms_to_dict(sms))
@@ -124,6 +126,11 @@ async def ingest_sms(
         logger.critical("Batch commit failed: %s. Rolling back.", e)
         await db.rollback()
         raise DatabaseError("batch_commit", original=e) from e
+
+    # Send Telegram notifications after successful commit
+    if notification_data:
+        from services.telegram.notify import send_transaction_notifications
+        await send_transaction_notifications(notification_data)
 
     return IngestResponse(
         message=f"Ingested {processed} SMS, ignored {ignored}, skipped {skipped}, failed {failed}",
