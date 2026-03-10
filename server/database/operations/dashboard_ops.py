@@ -3,7 +3,7 @@ import math
 from datetime import date
 from typing import Optional
 
-from sqlalchemy import select, func, case, literal, and_
+from sqlalchemy import select, func, case, and_
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -25,24 +25,6 @@ def _date_filter(start: date, end: date):
         Transaction.transaction_date >= start,
         Transaction.transaction_date <= end,
     )
-
-
-async def _collect_merchant_ids(db: AsyncSession, merchant_id: int) -> list[int]:
-    """Resolve to primary, then collect primary + all variant IDs."""
-    result = await db.execute(
-        select(Merchant.primary_merchant_id).where(Merchant.id == merchant_id)
-    )
-    row = result.one_or_none()
-    if row is None:
-        return [merchant_id]
-
-    primary_id = row[0] if row[0] is not None else merchant_id
-
-    linked = await db.execute(
-        select(Merchant.id).where(Merchant.primary_merchant_id == primary_id)
-    )
-    ids = [primary_id] + [r[0] for r in linked.all()]
-    return ids
 
 
 async def get_summary(
@@ -150,18 +132,14 @@ async def get_merchant_breakdown(
         if direction:
             filters.append(Transaction.direction == direction)
 
-        # Use COALESCE(m.primary_merchant_id, m.id) to group variants under primary
-        effective_merchant_id = func.coalesce(Merchant.primary_merchant_id, Merchant.id)
-
         stmt = (
             select(
-                effective_merchant_id.label("merchant_id"),
+                Transaction.merchant_id,
                 func.sum(Transaction.amount).label("total_amount"),
                 func.count(Transaction.id).label("transaction_count"),
             )
-            .join(Merchant, Merchant.id == Transaction.merchant_id)
-            .where(*filters)
-            .group_by(effective_merchant_id)
+            .where(*filters, Transaction.merchant_id.isnot(None))
+            .group_by(Transaction.merchant_id)
             .order_by(func.sum(Transaction.amount).desc())
             .limit(limit)
         )
@@ -169,7 +147,6 @@ async def get_merchant_breakdown(
         result = await db.execute(stmt)
         rows = result.all()
 
-        # Fetch merchant + category info for the resolved IDs
         merchant_ids = [row.merchant_id for row in rows]
         if not merchant_ids:
             return []
@@ -188,7 +165,6 @@ async def get_merchant_breakdown(
             output.append({
                 "merchant_id": row.merchant_id,
                 "merchant_name": m.name if m else "Unknown",
-                "display_name": m.display_name if m else None,
                 "category_name": cat_name,
                 "total_amount": round(float(row.total_amount), 2),
                 "transaction_count": row.transaction_count,
@@ -255,7 +231,6 @@ async def get_category_detail(
 ) -> dict:
     start, end = resolve_date_range(start_date, end_date)
     try:
-        # Verify category exists
         cat_result = await db.execute(
             select(Category).where(Category.id == category_id)
         )
@@ -266,7 +241,6 @@ async def get_category_detail(
         date_cond = _date_filter(start, end)
         cat_cond = Transaction.category_id == category_id
 
-        # Totals
         totals_stmt = select(
             func.coalesce(
                 func.sum(case((Transaction.direction == "debit", Transaction.amount), else_=0)), 0
@@ -279,7 +253,6 @@ async def get_category_detail(
 
         totals = (await db.execute(totals_stmt)).one()
 
-        # Paginated transactions
         total_count = totals.transaction_count
         total_pages = max(1, math.ceil(total_count / per_page))
         offset = (page - 1) * per_page
@@ -288,7 +261,6 @@ async def get_category_detail(
             select(
                 Transaction,
                 Merchant.name.label("merchant_name"),
-                Merchant.display_name.label("merchant_display_name"),
                 Category.name.label("category_name"),
             )
             .outerjoin(Merchant, Merchant.id == Transaction.merchant_id)
@@ -303,8 +275,8 @@ async def get_category_detail(
         tx_rows = tx_result.all()
 
         transactions = [
-            _transaction_to_dict(tx, m_name, m_display, c_name)
-            for tx, m_name, m_display, c_name in tx_rows
+            _transaction_to_dict(tx, m_name, c_name)
+            for tx, m_name, c_name in tx_rows
         ]
 
         return {
@@ -338,34 +310,12 @@ async def get_merchant_detail(
 ) -> dict:
     start, end = resolve_date_range(start_date, end_date)
     try:
-        # Fetch merchant, resolve to primary
         m_result = await db.execute(
             select(Merchant).where(Merchant.id == merchant_id)
         )
         merchant = m_result.scalar_one_or_none()
         if not merchant:
             raise DatabaseError(f"merchant_id={merchant_id} not found")
-
-        # Resolve to primary
-        primary_id = merchant.primary_merchant_id or merchant.id
-        if merchant.primary_merchant_id:
-            p_result = await db.execute(
-                select(Merchant).where(Merchant.id == primary_id)
-            )
-            merchant = p_result.scalar_one_or_none() or merchant
-
-        # Collect all IDs (primary + variants)
-        all_ids = await _collect_merchant_ids(db, primary_id)
-
-        # Get variants list
-        variants_stmt = select(Merchant).where(
-            Merchant.primary_merchant_id == primary_id
-        )
-        variants_result = await db.execute(variants_stmt)
-        variants = [
-            {"id": v.id, "name": v.name, "display_name": v.display_name, "vpa": v.vpa}
-            for v in variants_result.scalars().all()
-        ]
 
         # Category name
         cat_name = None
@@ -377,9 +327,8 @@ async def get_merchant_detail(
             cat_name = cat_row[0] if cat_row else None
 
         date_cond = _date_filter(start, end)
-        merchant_cond = Transaction.merchant_id.in_(all_ids)
+        merchant_cond = Transaction.merchant_id == merchant_id
 
-        # Totals
         totals_stmt = select(
             func.coalesce(
                 func.sum(case((Transaction.direction == "debit", Transaction.amount), else_=0)), 0
@@ -400,7 +349,6 @@ async def get_merchant_detail(
             select(
                 Transaction,
                 Merchant.name.label("merchant_name"),
-                Merchant.display_name.label("merchant_display_name"),
                 Category.name.label("category_name"),
             )
             .outerjoin(Merchant, Merchant.id == Transaction.merchant_id)
@@ -415,18 +363,16 @@ async def get_merchant_detail(
         tx_rows = tx_result.all()
 
         transactions = [
-            _transaction_to_dict(tx, m_name, m_display, c_name)
-            for tx, m_name, m_display, c_name in tx_rows
+            _transaction_to_dict(tx, m_name, c_name)
+            for tx, m_name, c_name in tx_rows
         ]
 
         return {
             "merchant_id": merchant.id,
             "merchant_name": merchant.name,
-            "display_name": merchant.display_name,
             "vpa": merchant.vpa,
             "category_id": merchant.category_id,
             "category_name": cat_name,
-            "variants": variants,
             "total_debited": round(float(totals.total_debited), 2),
             "total_credited": round(float(totals.total_credited), 2),
             "transaction_count": total_count,
@@ -444,7 +390,7 @@ async def get_merchant_detail(
         raise DatabaseError("get_merchant_detail", original=e) from e
 
 
-def _transaction_to_dict(tx: Transaction, merchant_name, merchant_display_name, category_name) -> dict:
+def _transaction_to_dict(tx: Transaction, merchant_name, category_name) -> dict:
     return {
         "id": tx.id,
         "direction": tx.direction,
@@ -452,9 +398,9 @@ def _transaction_to_dict(tx: Transaction, merchant_name, merchant_display_name, 
         "bank": tx.bank,
         "merchant_id": tx.merchant_id,
         "merchant_name": merchant_name,
-        "merchant_display_name": merchant_display_name,
         "category_id": tx.category_id,
         "category_name": category_name,
+        "category_source": tx.category_source,
         "merchant_raw": tx.merchant_raw,
         "account_last4": tx.account_last4,
         "vpa": tx.vpa,

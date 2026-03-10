@@ -9,13 +9,10 @@ from database.operations.merchant_ops import (
     categorize_merchant,
     get_all_merchants,
     get_uncategorized_merchants,
-    merge_merchant,
-    unlink_merchant,
 )
 from schemas import (
     CategorizeMerchantRequest,
     MerchantResponse,
-    MergeMerchantRequest,
     UncategorizedMerchantResponse,
 )
 
@@ -46,7 +43,6 @@ async def categorize(
     return {
         "id": merchant.id,
         "name": merchant.name,
-        "display_name": merchant.display_name,
         "vpa": merchant.vpa,
         "category_id": merchant.category_id,
         "is_confirmed": merchant.is_confirmed,
@@ -54,24 +50,3 @@ async def categorize(
         "first_seen": merchant.first_seen.isoformat() if merchant.first_seen else None,
         "last_seen": merchant.last_seen.isoformat() if merchant.last_seen else None,
     }
-
-
-@router.post("/{merchant_id}/merge")
-async def merge(
-    merchant_id: int,
-    body: MergeMerchantRequest,
-    db: AsyncSession = Depends(get_db),
-):
-    await merge_merchant(db, merchant_id, body.into_merchant_id)
-    await db.commit()
-    return {"message": f"Merchant {merchant_id} merged into {body.into_merchant_id}"}
-
-
-@router.post("/{merchant_id}/unlink")
-async def unlink(
-    merchant_id: int,
-    db: AsyncSession = Depends(get_db),
-):
-    await unlink_merchant(db, merchant_id)
-    await db.commit()
-    return {"message": f"Merchant {merchant_id} unlinked"}

@@ -27,14 +27,9 @@ class CategorizeMerchantRequest(BaseModel):
     category_id: int
 
 
-class MergeMerchantRequest(BaseModel):
-    into_merchant_id: int
-
-
 class MerchantResponse(BaseModel):
     id: int
     name: str
-    display_name: Optional[str] = None
     vpa: Optional[str] = None
     category_id: Optional[int] = None
     category_name: Optional[str] = None
@@ -48,7 +43,6 @@ class MerchantResponse(BaseModel):
 class UncategorizedMerchantResponse(BaseModel):
     id: int
     name: str
-    display_name: Optional[str] = None
     vpa: Optional[str] = None
     first_seen: Optional[str] = None
     last_seen: Optional[str] = None
@@ -103,7 +97,6 @@ class CategoryBreakdownItem(BaseModel):
 class MerchantBreakdownItem(BaseModel):
     merchant_id: int
     merchant_name: str
-    display_name: Optional[str] = None
     category_name: Optional[str] = None
     total_amount: float
     transaction_count: int
@@ -130,9 +123,9 @@ class TransactionItem(BaseModel):
     bank: str
     merchant_id: Optional[int] = None
     merchant_name: Optional[str] = None
-    merchant_display_name: Optional[str] = None
     category_id: Optional[int] = None
     category_name: Optional[str] = None
+    category_source: Optional[str] = None
     merchant_raw: Optional[str] = None
     account_last4: Optional[str] = None
     vpa: Optional[str] = None
@@ -160,11 +153,9 @@ class CategoryDetailResponse(BaseModel):
 class MerchantDetailResponse(BaseModel):
     merchant_id: int
     merchant_name: str
-    display_name: Optional[str] = None
     vpa: Optional[str] = None
     category_id: Optional[int] = None
     category_name: Optional[str] = None
-    variants: List[dict]
     total_debited: float
     total_credited: float
     transaction_count: int

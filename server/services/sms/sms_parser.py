@@ -1,15 +1,17 @@
 import logging
 from dataclasses import dataclass
 from datetime import date, datetime
+from pathlib import Path
 from typing import Optional
 
+import yaml
+
 from exceptions import DateParseError
-from services.sms.template_loader import load_templates
-from services.template_engine import fuzzy_match
+from services.template_engine import compile_template
 
 logger = logging.getLogger(__name__)
 
-MATCH_CONFIDENCE_THRESHOLD = 0.90
+TEMPLATES_PATH = Path(__file__).parent / "sms_templates.yaml"
 
 
 @dataclass
@@ -24,7 +26,25 @@ class ParsedSMS:
     transaction_date: Optional[date] = None
 
 
-BANK_SENDER_MAP = load_templates()
+def _load_templates() -> dict[str, list[dict]]:
+    """Read sms_templates.yaml and compile regex patterns."""
+    with open(TEMPLATES_PATH) as f:
+        raw = yaml.safe_load(f)
+
+    bank_sender_map: dict[str, list[dict]] = {}
+    for sender_key, config in raw.items():
+        patterns = []
+        for tmpl in config["templates"]:
+            patterns.append({
+                "regex": compile_template(tmpl["pattern"]),
+                "direction": tmpl["direction"],
+                "bank": config["bank"],
+            })
+        bank_sender_map[sender_key] = patterns
+    return bank_sender_map
+
+
+BANK_SENDER_MAP = _load_templates()
 
 
 def _identify_bank(sender: str) -> list | None:
@@ -51,52 +71,40 @@ def parse_sms(sender: str, body: str) -> ParsedSMS | None:
     if not patterns:
         return None
 
-    best_result = None
-    best_confidence = 0.0
-    best_pattern = None
-
     for pattern_def in patterns:
-        result = fuzzy_match(pattern_def["template"], body)
-        if result and result.confidence > best_confidence:
-            best_result = result
-            best_confidence = result.confidence
-            best_pattern = pattern_def
+        match = pattern_def["regex"].search(body)
+        if not match:
+            continue
 
-    if not best_result or best_confidence < MATCH_CONFIDENCE_THRESHOLD:
-        return None
+        groups = match.groupdict()
+        logger.debug("Matched template for sender=%s", sender)
 
-    logger.debug(
-        "Matched template with confidence=%.3f for sender=%s",
-        best_confidence,
-        sender,
-    )
+        amount_str = groups.get("amount", "0")
+        amount = float(amount_str.replace(",", ""))
 
-    groups = best_result.groups
+        tx_date = None
+        if "date" in groups:
+            try:
+                tx_date = _parse_date(groups["date"])
+            except DateParseError:
+                logger.warning(
+                    "Could not parse date %r from sender=%s, continuing with tx_date=None",
+                    groups["date"],
+                    sender,
+                )
 
-    amount_str = groups.get("amount", "0")
-    amount = float(amount_str.replace(",", ""))
+        vpa = groups.get("vpa")
+        merchant_raw = groups.get("merchant") or vpa
 
-    tx_date = None
-    if "date" in groups:
-        try:
-            tx_date = _parse_date(groups["date"])
-        except DateParseError:
-            logger.warning(
-                "Could not parse date %r from sender=%s, continuing with tx_date=None",
-                groups["date"],
-                sender,
-            )
+        return ParsedSMS(
+            direction=pattern_def["direction"],
+            amount=amount,
+            bank=pattern_def["bank"],
+            account_last4=groups.get("last4"),
+            merchant_raw=merchant_raw,
+            vpa=vpa,
+            upi_ref=groups.get("upi_ref"),
+            transaction_date=tx_date,
+        )
 
-    vpa = groups.get("vpa")
-    merchant_raw = groups.get("merchant") or vpa
-
-    return ParsedSMS(
-        direction=best_pattern["direction"],
-        amount=amount,
-        bank=best_pattern["bank"],
-        account_last4=groups.get("last4"),
-        merchant_raw=merchant_raw,
-        vpa=vpa,
-        upi_ref=groups.get("upi_ref"),
-        transaction_date=tx_date,
-    )
+    return None

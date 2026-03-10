@@ -24,6 +24,7 @@ _MIGRATIONS = [
     ("merchants", "vpa", "TEXT"),
     ("merchants", "display_name", "TEXT"),
     ("merchants", "primary_merchant_id", "INTEGER REFERENCES merchants(id)"),
+    ("transactions", "category_source", "TEXT"),
 ]
 
 
@@ -46,6 +47,11 @@ async def _run_migrations(conn):
         if column not in existing:
             await conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {column} {col_type}"))
             logger.info("Migration: added column %s.%s", table, column)
+
+    # Nullify dead primary_merchant_id values
+    await conn.execute(text(
+        "UPDATE merchants SET primary_merchant_id = NULL WHERE primary_merchant_id IS NOT NULL"
+    ))
 
     for idx_name, table, columns in _INDICES:
         await conn.execute(text(

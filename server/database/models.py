@@ -23,13 +23,9 @@ class Merchant(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String, unique=True, index=True)
-    display_name: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     vpa: Mapped[Optional[str]] = mapped_column(String, nullable=True, index=True)
     category_id: Mapped[Optional[int]] = mapped_column(
         Integer, ForeignKey("categories.id"), nullable=True
-    )
-    primary_merchant_id: Mapped[Optional[int]] = mapped_column(
-        Integer, ForeignKey("merchants.id"), nullable=True
     )
     is_confirmed: Mapped[bool] = mapped_column(Boolean, default=False)
     times_confirmed: Mapped[int] = mapped_column(Integer, default=0)
@@ -66,4 +62,5 @@ class Transaction(Base):
     raw_sms: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     sms_sender: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     sms_received_at: Mapped[Optional[datetime]] = mapped_column(nullable=True)
+    category_source: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(timezone.utc))

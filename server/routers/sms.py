@@ -1,4 +1,7 @@
+import json
 import logging
+from datetime import datetime
+from pathlib import Path
 from typing import List
 
 from fastapi import APIRouter, Depends
@@ -12,6 +15,31 @@ from services.sms.sms_service import process_single_sms
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v1/sms", tags=["sms"])
+
+SMS_LOGS_DIR = Path(__file__).resolve().parent.parent / "logs" / "sms_logs"
+
+
+def _sms_to_dict(sms: SmsIngestPayload) -> dict:
+    return {"id": sms.id, "address": sms.address, "received": sms.received, "body": sms.body}
+
+
+def _save_sms_logs(
+    processed_list: list[dict],
+    ignored_list: list[dict],
+    skipped_list: list[dict],
+    failed_list: list[dict],
+) -> None:
+    SMS_LOGS_DIR.mkdir(exist_ok=True)
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    for name, data in [
+        ("processed", processed_list),
+        ("ignored", ignored_list),
+        ("skipped", skipped_list),
+        ("failed", failed_list),
+    ]:
+        filepath = SMS_LOGS_DIR / f"{name}_{timestamp}.json"
+        with open(filepath, "w") as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
 
 
 @router.post("/ingest", response_model=IngestResponse)
@@ -36,22 +64,34 @@ async def ingest_sms(
     failed = 0
     errors: list[str] = []
 
+    processed_list: list[dict] = []
+    ignored_list: list[dict] = []
+    skipped_list: list[dict] = []
+    failed_list: list[dict] = []
+
     for sms in payload:
         try:
             await process_single_sms(sms, db)
             processed += 1
+            processed_list.append(_sms_to_dict(sms))
         except UnmatchedSMSError:
             ignored += 1
+            ignored_list.append(_sms_to_dict(sms))
         except DuplicateSMSError:
             skipped += 1
+            skipped_list.append(_sms_to_dict(sms))
         except DatabaseError as e:
             logger.error("Database error processing sms_id=%s: %s", sms.id, e)
             failed += 1
             errors.append(f"sms_id={sms.id}: {e}")
+            failed_list.append({**_sms_to_dict(sms), "error": str(e)})
         except AutoTallyError as e:
             logger.warning("Failed to process sms_id=%s: %s", sms.id, e)
             failed += 1
             errors.append(str(e))
+            failed_list.append({**_sms_to_dict(sms), "error": str(e)})
+
+    _save_sms_logs(processed_list, ignored_list, skipped_list, failed_list)
 
     if failed > 0:
         logger.info(

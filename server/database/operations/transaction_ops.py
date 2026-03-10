@@ -10,7 +10,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from database.models import Transaction, Merchant, Category
 from database.operations.dashboard_ops import (
     resolve_date_range,
-    _collect_merchant_ids,
     _transaction_to_dict,
 )
 from exceptions import DatabaseError
@@ -66,8 +65,7 @@ async def get_transactions_paginated(
         if category_id is not None:
             filters.append(Transaction.category_id == category_id)
         if merchant_id is not None:
-            all_ids = await _collect_merchant_ids(db, merchant_id)
-            filters.append(Transaction.merchant_id.in_(all_ids))
+            filters.append(Transaction.merchant_id == merchant_id)
         if bank:
             filters.append(Transaction.bank == bank)
         if min_amount is not None:
@@ -98,7 +96,6 @@ async def get_transactions_paginated(
             select(
                 Transaction,
                 Merchant.name.label("merchant_name"),
-                Merchant.display_name.label("merchant_display_name"),
                 Category.name.label("category_name"),
             )
             .outerjoin(Merchant, Merchant.id == Transaction.merchant_id)
@@ -113,8 +110,8 @@ async def get_transactions_paginated(
         rows = result.all()
 
         transactions = [
-            _transaction_to_dict(tx, m_name, m_display, c_name)
-            for tx, m_name, m_display, c_name in rows
+            _transaction_to_dict(tx, m_name, c_name)
+            for tx, m_name, c_name in rows
         ]
 
         return {
