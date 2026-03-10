@@ -39,8 +39,7 @@ async def categorize(
     db: AsyncSession = Depends(get_db),
 ):
     merchant = await categorize_merchant(db, merchant_id, body.category_id)
-    await db.commit()
-    return {
+    result = {
         "id": merchant.id,
         "name": merchant.name,
         "vpa": merchant.vpa,
@@ -50,3 +49,5 @@ async def categorize(
         "first_seen": merchant.first_seen.isoformat() if merchant.first_seen else None,
         "last_seen": merchant.last_seen.isoformat() if merchant.last_seen else None,
     }
+    await db.commit()
+    return result

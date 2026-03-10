@@ -6,7 +6,8 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from database.db import get_db
-from database.operations.transaction_ops import get_transactions_paginated
+from database.operations.transaction_ops import get_transactions_paginated, update_transaction_category
+from schemas import TransactionUpdateRequest
 
 logger = logging.getLogger(__name__)
 
@@ -46,3 +47,15 @@ async def list_transactions(
         page=page,
         per_page=per_page,
     )
+
+
+@router.patch("/{txn_id}")
+async def update_category(
+    txn_id: int,
+    body: TransactionUpdateRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    txn = await update_transaction_category(db, txn_id, body.category_id)
+    result = {"id": txn.id, "category_id": txn.category_id, "category_source": txn.category_source}
+    await db.commit()
+    return result

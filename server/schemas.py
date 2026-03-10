@@ -64,11 +64,17 @@ class CategoryUpdateRequest(BaseModel):
     description: Optional[str] = None
 
 
+class TransactionUpdateRequest(BaseModel):
+    category_id: Optional[int] = None
+
+
 class CategoryResponse(BaseModel):
     id: int
     name: str
     icon: Optional[str] = None
     description: Optional[str] = None
+    transaction_count: int = 0
+    total_debited: float = 0.0
 
 
 # --- Dashboard schemas ---

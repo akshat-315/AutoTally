@@ -125,3 +125,19 @@ async def get_transactions_paginated(
         }
     except SQLAlchemyError as e:
         raise DatabaseError("get_transactions_paginated", original=e) from e
+
+
+async def update_transaction_category(
+    db: AsyncSession, txn_id: int, category_id: int | None
+) -> Transaction:
+    try:
+        result = await db.execute(select(Transaction).where(Transaction.id == txn_id))
+        txn = result.scalar_one_or_none()
+        if not txn:
+            raise DatabaseError(f"transaction id={txn_id} not found")
+        txn.category_id = category_id
+        txn.category_source = "user" if category_id is not None else None
+        await db.flush()
+        return txn
+    except SQLAlchemyError as e:
+        raise DatabaseError("update_transaction_category", original=e) from e

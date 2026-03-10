@@ -1,19 +1,48 @@
 import logging
 from typing import Optional
 
-from sqlalchemy import select
+from sqlalchemy import select, func, case
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from database.models import Category
+from database.models import Category, Transaction
 from exceptions import DatabaseError
 
 logger = logging.getLogger(__name__)
 
 
-async def get_all_categories(db: AsyncSession) -> list[Category]:
-    result = await db.execute(select(Category).order_by(Category.name))
-    return list(result.scalars().all())
+async def get_all_categories(db: AsyncSession) -> list[dict]:
+    stmt = (
+        select(
+            Category,
+            func.count(Transaction.id).label("transaction_count"),
+            func.coalesce(
+                func.sum(
+                    case(
+                        (Transaction.direction == "debit", Transaction.amount),
+                        else_=0,
+                    )
+                ),
+                0,
+            ).label("total_debited"),
+        )
+        .outerjoin(Transaction, Transaction.category_id == Category.id)
+        .group_by(Category.id)
+        .order_by(Category.name)
+    )
+    result = await db.execute(stmt)
+    rows = result.all()
+    return [
+        {
+            "id": cat.id,
+            "name": cat.name,
+            "icon": cat.icon,
+            "description": cat.description,
+            "transaction_count": tx_count,
+            "total_debited": round(float(total_debited), 2),
+        }
+        for cat, tx_count, total_debited in rows
+    ]
 
 
 async def get_category_by_id(db: AsyncSession, category_id: int) -> Optional[Category]:
