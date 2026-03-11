@@ -100,13 +100,15 @@ export default function CategoriesPage() {
                   <span className="text-sm font-semibold">{cat.name}</span>
                 </div>
                 <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button
-                      className="h-7 w-7 flex items-center justify-center rounded-md opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity hover:bg-accent"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
-                    </button>
+                  <DropdownMenuTrigger
+                    render={
+                      <button
+                        className="h-7 w-7 flex items-center justify-center rounded-md opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity hover:bg-accent"
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    }
+                  >
+                    <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
                     <DropdownMenuItem onClick={() => openEdit(cat)}>

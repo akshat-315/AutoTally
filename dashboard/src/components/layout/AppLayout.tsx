@@ -34,7 +34,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <TooltipProvider delayDuration={0}>
+    <TooltipProvider delay={0}>
       <div className="min-h-screen bg-background text-foreground">
         <Sidebar
           collapsed={collapsed}

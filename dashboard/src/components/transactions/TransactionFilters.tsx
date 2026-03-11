@@ -85,7 +85,7 @@ export default function TransactionFilters({ filters, onChange }: Props) {
       {/* Category select */}
       <Select
         value={filters.category_id || "__all__"}
-        onValueChange={(val) => set("category_id", val === "__all__" ? "" : val)}
+        onValueChange={(val) => set("category_id", !val || val === "__all__" ? "" : val)}
       >
         <SelectTrigger size="sm" className="min-w-[140px]">
           <SelectValue placeholder="All categories" />
@@ -113,19 +113,21 @@ export default function TransactionFilters({ filters, onChange }: Props) {
 
       {/* Amount range popover */}
       <Popover>
-        <PopoverTrigger asChild>
-          <Button
-            variant="outline"
-            size="sm"
-            className={cn(
-              "h-8 gap-1.5",
-              (filters.min_amount || filters.max_amount) &&
-                "border-foreground/30",
-            )}
-          >
-            <SlidersHorizontal className="h-3.5 w-3.5" />
-            <span className="text-xs">Amount</span>
-          </Button>
+        <PopoverTrigger
+          render={
+            <Button
+              variant="outline"
+              size="sm"
+              className={cn(
+                "h-8 gap-1.5",
+                (filters.min_amount || filters.max_amount) &&
+                  "border-foreground/30",
+              )}
+            />
+          }
+        >
+          <SlidersHorizontal className="h-3.5 w-3.5" />
+          <span className="text-xs">Amount</span>
         </PopoverTrigger>
         <PopoverContent className="w-56 p-3" align="start">
           <p className="text-xs font-medium text-muted-foreground mb-2">

@@ -100,7 +100,21 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
             if (showTooltips) {
               return (
                 <Tooltip key={to}>
-                  <TooltipTrigger asChild>{link}</TooltipTrigger>
+                  <TooltipTrigger
+                    render={
+                      <Link
+                        to={to}
+                        className={cn(
+                          "flex items-center gap-3 rounded-md px-2.5 py-2 text-sm font-medium transition-colors",
+                          active
+                            ? "bg-accent text-foreground border-l-2 border-foreground -ml-px"
+                            : "text-muted-foreground hover:bg-accent hover:text-foreground",
+                        )}
+                      />
+                    }
+                  >
+                    <Icon className="h-4 w-4 shrink-0" />
+                  </TooltipTrigger>
                   <TooltipContent side="right">{label}</TooltipContent>
                 </Tooltip>
               );
