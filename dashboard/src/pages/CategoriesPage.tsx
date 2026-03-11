@@ -1,28 +1,29 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import {
   fetchCategories,
-  fetchCategoryMerchants,
   createCategory,
   updateCategory,
   deleteCategory,
 } from "@/lib/api";
-import type { Category, MerchantItem } from "@/lib/types";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import type { Category } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatCurrency } from "@/lib/utils";
 import CategoryFormDialog from "@/components/categories/CategoryFormDialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { MoreHorizontal, Plus, Pencil, Trash2 } from "lucide-react";
+import EmptyState from "@/components/shared/EmptyState";
 
 export default function CategoriesPage() {
+  const navigate = useNavigate();
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
-  const [expandedId, setExpandedId] = useState<number | null>(null);
-  const [merchants, setMerchants] = useState<MerchantItem[]>([]);
-  const [merchantsLoading, setMerchantsLoading] = useState(false);
-
-  // Dialog state
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
@@ -35,21 +36,6 @@ export default function CategoriesPage() {
   };
 
   useEffect(() => { load(); }, []);
-
-  const handleExpand = async (id: number) => {
-    if (expandedId === id) {
-      setExpandedId(null);
-      return;
-    }
-    setExpandedId(id);
-    setMerchantsLoading(true);
-    try {
-      const data = await fetchCategoryMerchants(id);
-      setMerchants(data);
-    } finally {
-      setMerchantsLoading(false);
-    }
-  };
 
   const handleCreate = async (data: { name: string; icon: string; description: string }) => {
     await createCategory(data);
@@ -65,7 +51,6 @@ export default function CategoriesPage() {
   const handleDelete = async (id: number) => {
     await deleteCategory(id);
     setDeleteConfirm(null);
-    if (expandedId === id) setExpandedId(null);
     load();
   };
 
@@ -74,126 +59,89 @@ export default function CategoriesPage() {
     setDialogOpen(true);
   };
 
-  const openEdit = (cat: Category, e: React.MouseEvent) => {
-    e.stopPropagation();
+  const openEdit = (cat: Category) => {
     setEditingCategory(cat);
     setDialogOpen(true);
   };
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Categories</h1>
-        <Button onClick={openCreate}>Create Category</Button>
+      <div className="flex items-center justify-end">
+        <Button variant="ghost" size="sm" onClick={openCreate} className="gap-1.5">
+          <Plus className="h-4 w-4" />
+          Create Category
+        </Button>
       </div>
 
       {loading ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <Skeleton key={i} className="h-36 w-full" />
+        <div className="grid gap-4 sm:grid-cols-2">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-28 w-full" />
           ))}
         </div>
       ) : categories.length === 0 ? (
-        <p className="text-muted-foreground py-12 text-center">
-          No categories yet. Create one to get started.
-        </p>
+        <EmptyState
+          title="No categories yet"
+          description="Create one to start organizing your transactions."
+        />
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2">
           {categories.map((cat) => (
-            <div key={cat.id}>
-              <Card
-                className="cursor-pointer transition-shadow hover:shadow-md"
-                onClick={() => handleExpand(cat.id)}
-              >
-                <CardHeader className="pb-2">
-                  <div className="flex items-start justify-between">
-                    <CardTitle className="flex items-center gap-2 text-base">
-                      {cat.icon && <span className="text-lg">{cat.icon}</span>}
-                      {cat.name}
-                    </CardTitle>
-                    <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
-                      <Button variant="ghost" size="xs" onClick={(e) => openEdit(cat, e)}>
-                        Edit
-                      </Button>
-                      {deleteConfirm === cat.id ? (
-                        <div className="flex gap-1">
-                          <Button
-                            variant="destructive"
-                            size="xs"
-                            onClick={() => handleDelete(cat.id)}
-                          >
-                            Confirm
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="xs"
-                            onClick={() => setDeleteConfirm(null)}
-                          >
-                            Cancel
-                          </Button>
-                        </div>
-                      ) : (
-                        <Button
-                          variant="ghost"
-                          size="xs"
-                          className="text-destructive"
-                          onClick={() => setDeleteConfirm(cat.id)}
-                        >
-                          Delete
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  {cat.description && (
-                    <p className="text-sm text-muted-foreground mb-2">{cat.description}</p>
+            <div
+              key={cat.id}
+              className="group relative rounded-lg p-4 shadow-[0_0_0_1px_var(--color-border)] bg-card cursor-pointer transition-colors hover:bg-accent/50"
+              onClick={() => navigate(`/category/${cat.id}`)}
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-2.5">
+                  {cat.icon && (
+                    <span className="text-lg">{cat.icon}</span>
                   )}
-                  <div className="flex gap-3 text-sm">
-                    <Badge variant="secondary">{cat.transaction_count} txns</Badge>
-                    <Badge variant="outline">{formatCurrency(cat.total_debited)} spent</Badge>
-                  </div>
-                  <div className="mt-2">
-                    <Link
-                      to={`/category/${cat.id}`}
-                      className="text-xs text-muted-foreground hover:text-foreground hover:underline"
+                  <span className="text-sm font-semibold">{cat.name}</span>
+                </div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      className="h-7 w-7 flex items-center justify-center rounded-md opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity hover:bg-accent"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      View details
-                    </Link>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {expandedId === cat.id && (
-                <div className="mt-2 rounded-md border bg-muted/30 p-3">
-                  <h3 className="text-sm font-medium mb-2">Merchants in {cat.name}</h3>
-                  {merchantsLoading ? (
-                    <Skeleton className="h-16 w-full" />
-                  ) : merchants.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">No merchants tagged yet.</p>
-                  ) : (
-                    <div className="space-y-1">
-                      {merchants.map((m) => (
-                        <div
-                          key={m.id}
-                          className="flex items-center justify-between rounded px-2 py-1 text-sm hover:bg-muted"
-                        >
-                          <Link
-                            to={`/merchant/${m.id}`}
-                            className="hover:underline"
-                          >
-                            {m.display_name || m.name}
-                          </Link>
-                          <span className="text-xs text-muted-foreground tabular-nums">
-                            {m.transaction_count} txns
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                      <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                    <DropdownMenuItem onClick={() => openEdit(cat)}>
+                      <Pencil className="h-3.5 w-3.5 mr-2" />
+                      Edit
+                    </DropdownMenuItem>
+                    {deleteConfirm === cat.id ? (
+                      <DropdownMenuItem
+                        className="text-destructive focus:text-destructive"
+                        onClick={() => handleDelete(cat.id)}
+                      >
+                        <Trash2 className="h-3.5 w-3.5 mr-2" />
+                        Confirm delete
+                      </DropdownMenuItem>
+                    ) : (
+                      <DropdownMenuItem
+                        className="text-destructive focus:text-destructive"
+                        onClick={() => setDeleteConfirm(cat.id)}
+                      >
+                        <Trash2 className="h-3.5 w-3.5 mr-2" />
+                        Delete
+                      </DropdownMenuItem>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+              {cat.description && (
+                <p className="text-xs text-muted-foreground mt-1.5 line-clamp-1">
+                  {cat.description}
+                </p>
               )}
+              <div className="flex gap-4 mt-3 text-xs text-muted-foreground">
+                <span>{cat.transaction_count} transactions</span>
+                <span>{formatCurrency(cat.total_debited)} spent</span>
+              </div>
             </div>
           ))}
         </div>

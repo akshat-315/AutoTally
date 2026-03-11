@@ -143,6 +143,9 @@ def main():
     result = forward_to_server(server_url, payload)
     if result is not None:
         print(f"Server response: {json.dumps(result, indent=2)}")
+        config["last_sms_id"] = payload[-1]["_id"]
+        with open(CONFIG_PATH, "w") as f:
+            json.dump(config, f, indent=2)
     else:
         # Server unreachable — save to offline queue
         existing_queue = _load_queue()

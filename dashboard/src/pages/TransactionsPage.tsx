@@ -65,7 +65,6 @@ export default function TransactionsPage() {
     load();
   }, [load]);
 
-  // Reset page when filters change
   const handleFilterChange = (f: Filters) => {
     setFilters(f);
     setPage(1);
@@ -83,7 +82,6 @@ export default function TransactionsPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-semibold">Transactions</h1>
       <TransactionFilters filters={filters} onChange={handleFilterChange} />
       {loading ? (
         <Skeleton className="h-96 w-full" />

@@ -30,6 +30,7 @@ class CategorizeMerchantRequest(BaseModel):
 class MerchantResponse(BaseModel):
     id: int
     name: str
+    display_name: Optional[str] = None
     vpa: Optional[str] = None
     category_id: Optional[int] = None
     category_name: Optional[str] = None
@@ -156,12 +157,20 @@ class CategoryDetailResponse(BaseModel):
     pagination: PaginationMeta
 
 
+class MerchantVariant(BaseModel):
+    id: int
+    name: str
+    display_name: Optional[str] = None
+
+
 class MerchantDetailResponse(BaseModel):
     merchant_id: int
     merchant_name: str
+    display_name: Optional[str] = None
     vpa: Optional[str] = None
     category_id: Optional[int] = None
     category_name: Optional[str] = None
+    variants: List[MerchantVariant] = []
     total_debited: float
     total_credited: float
     transaction_count: int

@@ -59,13 +59,13 @@ export default function CategoryFormDialog({ open, onClose, onSubmit, initial, t
     <dialog
       ref={dialogRef}
       onClose={onClose}
-      className="fixed inset-0 z-50 m-auto w-full max-w-md rounded-lg border bg-background p-0 text-foreground shadow-lg backdrop:bg-black/50"
+      className="fixed inset-0 z-50 m-auto w-full max-w-md rounded-xl border bg-background p-0 text-foreground shadow-lg backdrop:bg-black/50 animate-in fade-in zoom-in-95 duration-200"
     >
       <form onSubmit={handleSubmit} className="flex flex-col gap-4 p-6">
         <h2 className="text-lg font-semibold">{title}</h2>
 
         <div className="space-y-2">
-          <label className="text-sm font-medium">Name *</label>
+          <label className="text-sm font-medium text-muted-foreground">Name *</label>
           <Input
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -76,7 +76,7 @@ export default function CategoryFormDialog({ open, onClose, onSubmit, initial, t
         </div>
 
         <div className="space-y-2">
-          <label className="text-sm font-medium">Icon</label>
+          <label className="text-sm font-medium text-muted-foreground">Icon</label>
           <Input
             value={icon}
             onChange={(e) => setIcon(e.target.value)}
@@ -87,7 +87,7 @@ export default function CategoryFormDialog({ open, onClose, onSubmit, initial, t
         </div>
 
         <div className="space-y-2">
-          <label className="text-sm font-medium">Description</label>
+          <label className="text-sm font-medium text-muted-foreground">Description</label>
           <Input
             value={description}
             onChange={(e) => setDescription(e.target.value)}

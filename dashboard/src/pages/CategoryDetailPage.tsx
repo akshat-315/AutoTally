@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDateRange } from "@/hooks/use-date-range";
 import { fetchCategoryDetail } from "@/lib/api";
 import type { CategoryDetailResponse } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils";
 import TransactionTable from "@/components/transactions/TransactionTable";
+import StatRow from "@/components/shared/StatRow";
+import { ChevronRight } from "lucide-react";
 
 export default function CategoryDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -48,35 +49,35 @@ export default function CategoryDetailPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <Link to="/" className="text-sm text-muted-foreground hover:text-foreground">
-          &larr; Dashboard
+      {/* Breadcrumb */}
+      <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+        <Link to="/categories" className="hover:text-foreground transition-colors">
+          Categories
         </Link>
-        <h1 className="text-xl font-semibold mt-1">
+        <ChevronRight className="h-3.5 w-3.5" />
+        <span className="text-foreground font-medium">
           {data.icon ? `${data.icon} ` : ""}{data.category_name}
-        </h1>
+        </span>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-3">
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-sm text-muted-foreground">Total Debited</p>
-            <p className="text-xl font-bold text-red-500">{formatCurrency(data.total_debited)}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-sm text-muted-foreground">Total Credited</p>
-            <p className="text-xl font-bold text-green-500">{formatCurrency(data.total_credited)}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-sm text-muted-foreground">Transactions</p>
-            <p className="text-xl font-bold">{data.transaction_count}</p>
-          </CardContent>
-        </Card>
-      </div>
+      <StatRow
+        stats={[
+          {
+            label: "Total Debited",
+            value: formatCurrency(data.total_debited),
+            color: "text-red-500",
+          },
+          {
+            label: "Total Credited",
+            value: formatCurrency(data.total_credited),
+            color: "text-green-500",
+          },
+          {
+            label: "Transactions",
+            value: data.transaction_count.toLocaleString("en-IN"),
+          },
+        ]}
+      />
 
       <TransactionTable
         transactions={data.transactions}

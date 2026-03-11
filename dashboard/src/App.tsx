@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/hooks/use-theme";
 import { DateRangeProvider } from "@/hooks/use-date-range";
-import Header from "@/components/layout/Header";
+import AppLayout from "@/components/layout/AppLayout";
 import DashboardPage from "@/pages/DashboardPage";
 import TransactionsPage from "@/pages/TransactionsPage";
 import CategoryDetailPage from "@/pages/CategoryDetailPage";
@@ -14,19 +14,16 @@ export default function App() {
     <ThemeProvider>
       <DateRangeProvider>
         <BrowserRouter>
-          <div className="min-h-screen bg-background text-foreground">
-            <Header />
-            <main className="mx-auto max-w-7xl px-4 py-6">
-              <Routes>
-                <Route path="/" element={<DashboardPage />} />
-                <Route path="/transactions" element={<TransactionsPage />} />
-                <Route path="/merchants" element={<MerchantsPage />} />
-                <Route path="/categories" element={<CategoriesPage />} />
-                <Route path="/category/:id" element={<CategoryDetailPage />} />
-                <Route path="/merchant/:id" element={<MerchantDetailPage />} />
-              </Routes>
-            </main>
-          </div>
+          <AppLayout>
+            <Routes>
+              <Route path="/" element={<DashboardPage />} />
+              <Route path="/transactions" element={<TransactionsPage />} />
+              <Route path="/merchants" element={<MerchantsPage />} />
+              <Route path="/categories" element={<CategoriesPage />} />
+              <Route path="/category/:id" element={<CategoryDetailPage />} />
+              <Route path="/merchant/:id" element={<MerchantDetailPage />} />
+            </Routes>
+          </AppLayout>
         </BrowserRouter>
       </DateRangeProvider>
     </ThemeProvider>

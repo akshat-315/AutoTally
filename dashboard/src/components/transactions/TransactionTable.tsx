@@ -20,6 +20,7 @@ import {
 import type { TransactionItem, PaginationMeta, Category } from "@/lib/types";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { fetchCategories, updateTransactionCategory } from "@/lib/api";
+import { ArrowDownLeft, ArrowUpRight, ChevronLeft, ChevronRight } from "lucide-react";
 
 interface Props {
   transactions: TransactionItem[];
@@ -68,26 +69,34 @@ export default function TransactionTable({
 
   return (
     <div>
-      <div className="rounded-md border overflow-x-auto">
+      <div className="overflow-x-auto">
         <Table>
           <TableHeader>
-            <TableRow>
+            <TableRow className="border-b border-border hover:bg-transparent">
               <TableHead
-                className="cursor-pointer select-none"
+                className="cursor-pointer select-none text-xs font-medium text-muted-foreground"
                 onClick={() => onSort("date")}
               >
                 Date{sortIndicator("date")}
               </TableHead>
-              <TableHead>Direction</TableHead>
+              <TableHead className="hidden md:table-cell text-xs font-medium text-muted-foreground w-10">
+                Type
+              </TableHead>
               <TableHead
-                className="cursor-pointer select-none text-right"
+                className="cursor-pointer select-none text-right text-xs font-medium text-muted-foreground"
                 onClick={() => onSort("amount")}
               >
                 Amount{sortIndicator("amount")}
               </TableHead>
-              <TableHead>Merchant</TableHead>
-              <TableHead>Category</TableHead>
-              <TableHead>Bank</TableHead>
+              <TableHead className="text-xs font-medium text-muted-foreground">
+                Merchant
+              </TableHead>
+              <TableHead className="text-xs font-medium text-muted-foreground">
+                Category
+              </TableHead>
+              <TableHead className="hidden lg:table-cell text-xs font-medium text-muted-foreground">
+                Bank
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -95,7 +104,7 @@ export default function TransactionTable({
               <TableRow>
                 <TableCell
                   colSpan={6}
-                  className="text-center py-8 text-muted-foreground"
+                  className="text-center py-8 text-muted-foreground text-sm"
                 >
                   No transactions found
                 </TableCell>
@@ -109,20 +118,18 @@ export default function TransactionTable({
                   : tx.category_name;
 
                 return (
-                  <TableRow key={tx.id}>
+                  <TableRow key={tx.id} className="border-b border-border">
                     <TableCell className="text-sm whitespace-nowrap">
                       {formatDate(tx.transaction_date)}
                     </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={
-                          tx.direction === "debit" ? "destructive" : "default"
-                        }
-                      >
-                        {tx.direction}
-                      </Badge>
+                    <TableCell className="hidden md:table-cell">
+                      {tx.direction === "debit" ? (
+                        <ArrowUpRight className="h-4 w-4 text-red-500" />
+                      ) : (
+                        <ArrowDownLeft className="h-4 w-4 text-green-500" />
+                      )}
                     </TableCell>
-                    <TableCell className="text-right font-medium tabular-nums">
+                    <TableCell className="text-right font-medium tabular-nums text-sm">
                       {formatCurrency(tx.amount)}
                     </TableCell>
                     <TableCell>
@@ -151,15 +158,18 @@ export default function TransactionTable({
                           val && handleCategoryChange(tx.id, val)
                         }
                       >
-                        <SelectTrigger size="sm" className="min-w-[120px]">
+                        <SelectTrigger size="sm" className="min-w-[120px] border-0 shadow-none px-0">
                           <SelectValue>
                             {catName ? (
-                              <Badge variant="secondary" className="text-xs">
+                              <Badge
+                                variant="secondary"
+                                className="text-xs cursor-pointer"
+                              >
                                 {catName}
                               </Badge>
                             ) : (
                               <span className="text-muted-foreground text-xs">
-                                Uncategorized
+                                Add category
                               </span>
                             )}
                           </SelectValue>
@@ -177,7 +187,9 @@ export default function TransactionTable({
                         </SelectContent>
                       </Select>
                     </TableCell>
-                    <TableCell className="text-sm">{tx.bank}</TableCell>
+                    <TableCell className="hidden lg:table-cell text-sm text-muted-foreground">
+                      {tx.bank}
+                    </TableCell>
                   </TableRow>
                 );
               })
@@ -188,26 +200,25 @@ export default function TransactionTable({
 
       {pagination.total_pages > 1 && (
         <div className="flex items-center justify-between mt-4">
-          <p className="text-sm text-muted-foreground">
-            Page {pagination.page} of {pagination.total_pages} (
-            {pagination.total_count} total)
+          <p className="text-xs text-muted-foreground">
+            Page {pagination.page} of {pagination.total_pages} ({pagination.total_count} total)
           </p>
-          <div className="flex gap-2">
+          <div className="flex gap-1">
             <Button
               variant="outline"
-              size="sm"
+              size="icon-sm"
               disabled={pagination.page <= 1}
               onClick={() => onPageChange(pagination.page - 1)}
             >
-              Previous
+              <ChevronLeft className="h-4 w-4" />
             </Button>
             <Button
               variant="outline"
-              size="sm"
+              size="icon-sm"
               disabled={pagination.page >= pagination.total_pages}
               onClick={() => onPageChange(pagination.page + 1)}
             >
-              Next
+              <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
         </div>

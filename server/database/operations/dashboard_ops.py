@@ -367,12 +367,21 @@ async def get_merchant_detail(
             for tx, m_name, c_name in tx_rows
         ]
 
+        # Query variants (merchants that point to this one as primary)
+        variants_stmt = select(Merchant.id, Merchant.name, Merchant.display_name).where(
+            Merchant.primary_merchant_id == merchant_id
+        )
+        variants_result = await db.execute(variants_stmt)
+        variants = [{"id": r.id, "name": r.name, "display_name": r.display_name} for r in variants_result.all()]
+
         return {
             "merchant_id": merchant.id,
             "merchant_name": merchant.name,
+            "display_name": merchant.display_name,
             "vpa": merchant.vpa,
             "category_id": merchant.category_id,
             "category_name": cat_name,
+            "variants": variants,
             "total_debited": round(float(totals.total_debited), 2),
             "total_credited": round(float(totals.total_credited), 2),
             "transaction_count": total_count,

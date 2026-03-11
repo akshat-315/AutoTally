@@ -1,13 +1,21 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useDateRange } from "@/hooks/use-date-range";
-import { fetchMerchantDetail } from "@/lib/api";
-import type { MerchantDetailResponse } from "@/lib/types";
+import { fetchMerchantDetail, fetchCategories, categorizeMerchant } from "@/lib/api";
+import type { MerchantDetailResponse, Category } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils";
 import TransactionTable from "@/components/transactions/TransactionTable";
+import StatRow from "@/components/shared/StatRow";
+import { ChevronRight } from "lucide-react";
 
 export default function MerchantDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -17,12 +25,19 @@ export default function MerchantDetailPage() {
   const [sortBy, setSortBy] = useState("date");
   const [sortOrder, setSortOrder] = useState("desc");
   const [loading, setLoading] = useState(true);
+  const [categories, setCategories] = useState<Category[]>([]);
 
   const load = useCallback(() => {
     if (!id) return;
     setLoading(true);
-    fetchMerchantDetail(Number(id), startDate, endDate, page)
-      .then(setData)
+    Promise.all([
+      fetchMerchantDetail(Number(id), startDate, endDate, page),
+      fetchCategories(),
+    ])
+      .then(([d, c]) => {
+        setData(d);
+        setCategories(c);
+      })
       .finally(() => setLoading(false));
   }, [id, startDate, endDate, page]);
 
@@ -39,6 +54,16 @@ export default function MerchantDetailPage() {
     }
   };
 
+  const handleCategorize = async (categoryId: number) => {
+    if (!data) return;
+    const updated = await categorizeMerchant(Number(id), categoryId);
+    setData({
+      ...data,
+      category_id: updated.category_id,
+      category_name: updated.category_name,
+    });
+  };
+
   if (loading && !data) {
     return <Skeleton className="h-96 w-full" />;
   }
@@ -49,56 +74,79 @@ export default function MerchantDetailPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <Link to="/" className="text-sm text-muted-foreground hover:text-foreground">
-          &larr; Dashboard
+      {/* Breadcrumb */}
+      <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+        <Link to="/merchants" className="hover:text-foreground transition-colors">
+          Merchants
         </Link>
-        <h1 className="text-xl font-semibold mt-1">
+        <ChevronRight className="h-3.5 w-3.5" />
+        <span className="text-foreground font-medium">
           {data.display_name || data.merchant_name}
-        </h1>
-        <div className="flex flex-wrap gap-2 mt-1">
-          {data.category_name && <Badge variant="secondary">{data.category_name}</Badge>}
-          {data.vpa && (
-            <span className="text-xs text-muted-foreground font-mono">{data.vpa}</span>
+        </span>
+      </div>
+
+      {/* Metadata */}
+      <div className="space-y-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {data.category_name ? (
+            <Badge variant="secondary">{data.category_name}</Badge>
+          ) : (
+            <Select
+              value=""
+              onValueChange={(val) => {
+                const catId = Number(val);
+                if (!isNaN(catId)) handleCategorize(catId);
+              }}
+            >
+              <SelectTrigger size="sm" className="w-auto min-w-[140px]">
+                <SelectValue placeholder="Set category..." />
+              </SelectTrigger>
+              <SelectContent>
+                {categories.map((c) => (
+                  <SelectItem key={c.id} value={String(c.id)}>
+                    {c.icon ? `${c.icon} ` : ""}{c.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           )}
         </div>
+        {(data.vpa || data.variants.length > 1) && (
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+            {data.vpa && (
+              <span className="font-mono">{data.vpa}</span>
+            )}
+            {data.variants.length > 1 && (
+              <span>
+                {data.variants.length} variants:{" "}
+                {data.variants
+                  .map((v) => (v as Record<string, string>).name || "")
+                  .filter(Boolean)
+                  .join(", ")}
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-3">
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-sm text-muted-foreground">Total Debited</p>
-            <p className="text-xl font-bold text-red-500">{formatCurrency(data.total_debited)}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-sm text-muted-foreground">Total Credited</p>
-            <p className="text-xl font-bold text-green-500">{formatCurrency(data.total_credited)}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-sm text-muted-foreground">Transactions</p>
-            <p className="text-xl font-bold">{data.transaction_count}</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {data.variants.length > 1 && (
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-sm font-medium mb-2">Variants ({data.variants.length})</p>
-            <div className="flex flex-wrap gap-2">
-              {data.variants.map((v, i) => (
-                <Badge key={i} variant="outline" className="text-xs">
-                  {(v as Record<string, string>).name || `Variant ${i + 1}`}
-                </Badge>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      <StatRow
+        stats={[
+          {
+            label: "Total Debited",
+            value: formatCurrency(data.total_debited),
+            color: "text-red-500",
+          },
+          {
+            label: "Total Credited",
+            value: formatCurrency(data.total_credited),
+            color: "text-green-500",
+          },
+          {
+            label: "Transactions",
+            value: data.transaction_count.toLocaleString("en-IN"),
+          },
+        ]}
+      />
 
       <TransactionTable
         transactions={data.transactions}

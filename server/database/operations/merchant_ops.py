@@ -231,6 +231,7 @@ async def get_all_merchants(db: AsyncSession) -> list[dict]:
         {
             "id": merchant.id,
             "name": merchant.name,
+            "display_name": merchant.display_name,
             "vpa": merchant.vpa,
             "category_id": merchant.category_id,
             "category_name": category_name,

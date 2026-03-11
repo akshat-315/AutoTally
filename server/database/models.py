@@ -27,6 +27,10 @@ class Merchant(Base):
     category_id: Mapped[Optional[int]] = mapped_column(
         Integer, ForeignKey("categories.id"), nullable=True
     )
+    display_name: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    primary_merchant_id: Mapped[Optional[int]] = mapped_column(
+        Integer, ForeignKey("merchants.id"), nullable=True
+    )
     is_confirmed: Mapped[bool] = mapped_column(Boolean, default=False)
     times_confirmed: Mapped[int] = mapped_column(Integer, default=0)
     source: Mapped[str] = mapped_column(String, default="pending")
