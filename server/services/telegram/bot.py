@@ -17,12 +17,14 @@ from database.db import async_session
 from database.operations.category_ops import (
     create_category,
     get_all_categories,
+    get_category_by_id,
 )
 from database.operations.dashboard_ops import get_category_breakdown, get_summary
 from database.operations.merchant_ops import (
     categorize_merchant,
     get_uncategorized_merchants,
 )
+from database.operations.transaction_ops import update_transaction_category
 
 logger = logging.getLogger(__name__)
 
@@ -248,6 +250,52 @@ async def handle_new_category_name(update: Update, context: ContextTypes.DEFAULT
     )
 
 
+# ── Callback: per-transaction category override ────────────────────
+
+@authorized
+async def cb_txn_change(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Show category list for per-transaction override."""
+    query = update.callback_query
+    await query.answer()
+
+    _, txn_id_str = query.data.split(":")
+    txn_id = int(txn_id_str)
+
+    async with async_session() as db:
+        categories = await get_all_categories(db)
+
+    if not categories:
+        await query.message.reply_text("No categories available.")
+        return
+
+    from services.telegram.notify import _build_txn_category_keyboard
+    keyboard = _build_txn_category_keyboard(txn_id, categories)
+    await query.edit_message_reply_markup(reply_markup=keyboard)
+
+
+@authorized
+async def cb_txn_categorize(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Apply per-transaction category override."""
+    query = update.callback_query
+    await query.answer()
+
+    _, txn_id_str, category_id_str = query.data.split(":")
+    txn_id = int(txn_id_str)
+    category_id = int(category_id_str)
+
+    async with async_session() as db:
+        txn = await update_transaction_category(db, txn_id, category_id)
+        cat = await get_category_by_id(db, category_id) if category_id else None
+        await db.commit()
+
+    cat_name = cat.name if cat else "None"
+    await query.edit_message_reply_markup(reply_markup=None)
+    await query.message.reply_text(
+        f"✏️ Transaction #{txn_id} overridden to <b>{cat_name}</b>",
+        parse_mode="HTML",
+    )
+
+
 # ── Bot lifecycle ───────────────────────────────────────────────────
 
 async def start_bot():
@@ -277,6 +325,8 @@ async def start_bot():
     # Callbacks
     _app.add_handler(CallbackQueryHandler(cb_categorize, pattern=r"^cat:\d+:\d+$"))
     _app.add_handler(CallbackQueryHandler(cb_create_new, pattern=r"^newcat:\d+$"))
+    _app.add_handler(CallbackQueryHandler(cb_txn_change, pattern=r"^txchange:\d+$"))
+    _app.add_handler(CallbackQueryHandler(cb_txn_categorize, pattern=r"^txcat:\d+:\d+$"))
 
     # Text reply for new category name
     _app.add_handler(

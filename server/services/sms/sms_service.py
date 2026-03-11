@@ -49,7 +49,7 @@ async def process_single_sms(sms: SmsIngestPayload, db: AsyncSession) -> dict:
         if category_id:
             category_source = "confirmed" if merchant.is_confirmed else merchant.source
 
-    await create_transaction(
+    txn = await create_transaction(
         db,
         sms_id=sms.id,
         direction=parsed.direction,
@@ -67,6 +67,7 @@ async def process_single_sms(sms: SmsIngestPayload, db: AsyncSession) -> dict:
         sms_sender=sms.address,
         sms_received_at=sms_received_at,
     )
+    await db.flush()  # Ensure transaction ID is assigned
 
     # Resolve category name for notification
     category_name = None
@@ -75,6 +76,7 @@ async def process_single_sms(sms: SmsIngestPayload, db: AsyncSession) -> dict:
         category_name = cat.name if cat else None
 
     return {
+        "transaction_id": txn.id,
         "amount": parsed.amount,
         "direction": parsed.direction,
         "merchant_name": merchant_name,

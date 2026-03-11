@@ -162,10 +162,13 @@ async def categorize_merchant(
     if merchant.times_confirmed >= AUTO_CONFIRM_THRESHOLD:
         merchant.is_confirmed = True
 
-    # Backfill transactions for this merchant
+    # Backfill transactions for this merchant (skip manual per-transaction overrides)
     await db.execute(
         update(Transaction)
-        .where(Transaction.merchant_id == merchant_id)
+        .where(
+            Transaction.merchant_id == merchant_id,
+            Transaction.category_source != "user_override",
+        )
         .values(category_id=category_id, category_source="user")
     )
 

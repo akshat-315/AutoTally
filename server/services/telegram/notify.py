@@ -20,12 +20,9 @@ async def send_transaction_notifications(transactions: list[dict]) -> None:
         if bot is None:
             return
 
-        # Fetch categories once for all transactions
-        categories = []
-        has_uncategorized = any(not tx.get("category_id") for tx in transactions)
-        if has_uncategorized:
-            async with async_session() as db:
-                categories = await get_all_categories(db)
+        # Fetch categories once (needed for uncategorized merchants AND override buttons)
+        async with async_session() as db:
+            categories = await get_all_categories(db)
 
         for tx in transactions:
             await _send_single(bot, tx, categories)
@@ -45,12 +42,17 @@ async def _send_single(bot, tx: dict, categories: list[dict]) -> None:
         f"Bank: {tx.get('bank', 'Unknown')}",
     ]
 
+    txn_id = tx.get("transaction_id")
+
     if tx.get("category_name"):
         lines.append(f"Category: {tx['category_name']}")
+        # Allow per-transaction override even for categorized transactions
+        keyboard = _build_override_keyboard(txn_id, categories) if txn_id else None
         await bot.send_message(
             chat_id=TELEGRAM_CHAT_ID,
             text="\n".join(lines),
             parse_mode="HTML",
+            reply_markup=keyboard,
         )
     else:
         lines.append("Category: <i>Uncategorized</i>")
@@ -61,6 +63,28 @@ async def _send_single(bot, tx: dict, categories: list[dict]) -> None:
             parse_mode="HTML",
             reply_markup=keyboard,
         )
+
+
+def _build_override_keyboard(txn_id: int, categories: list[dict]) -> InlineKeyboardMarkup | None:
+    """Single 'Change Category' button that triggers the override flow."""
+    if not categories:
+        return None
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton("✏️ Change Category", callback_data=f"txchange:{txn_id}")]
+    ])
+
+
+def _build_txn_category_keyboard(txn_id: int, categories: list[dict]) -> InlineKeyboardMarkup:
+    """Full category list for per-transaction override."""
+    buttons = []
+    for cat in categories:
+        icon = cat["icon"] or ""
+        label = f"{icon} {cat['name']}".strip()
+        buttons.append(
+            InlineKeyboardButton(label, callback_data=f"txcat:{txn_id}:{cat['id']}")
+        )
+    rows = [buttons[i:i + 2] for i in range(0, len(buttons), 2)]
+    return InlineKeyboardMarkup(rows)
 
 
 def _build_category_keyboard(merchant_id: int | None, categories: list[dict]) -> InlineKeyboardMarkup | None:

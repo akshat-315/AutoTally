@@ -136,7 +136,7 @@ async def update_transaction_category(
         if not txn:
             raise DatabaseError(f"transaction id={txn_id} not found")
         txn.category_id = category_id
-        txn.category_source = "user" if category_id is not None else None
+        txn.category_source = "user_override" if category_id is not None else None
         await db.flush()
         return txn
     except SQLAlchemyError as e:
