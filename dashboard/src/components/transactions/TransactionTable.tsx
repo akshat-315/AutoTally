@@ -18,7 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { TransactionItem, PaginationMeta, Category } from "@/lib/types";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { formatCurrency, formatDate, cn } from "@/lib/utils";
 import { fetchCategories, updateTransactionCategory } from "@/lib/api";
 import { ArrowDownLeft, ArrowUpRight, ChevronLeft, ChevronRight } from "lucide-react";
 
@@ -63,38 +63,42 @@ export default function TransactionTable({
   };
 
   const sortIndicator = (field: string) => {
-    if (sortBy !== field) return "";
-    return sortOrder === "asc" ? " \u2191" : " \u2193";
+    if (sortBy !== field) return null;
+    return (
+      <span className="ml-1 text-primary">
+        {sortOrder === "asc" ? "\u2191" : "\u2193"}
+      </span>
+    );
   };
 
   return (
-    <div>
+    <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
       <div className="overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow className="border-b border-border hover:bg-transparent">
               <TableHead
-                className="cursor-pointer select-none text-xs font-medium text-muted-foreground"
+                className="cursor-pointer select-none text-[11px] font-semibold text-muted-foreground uppercase tracking-wider"
                 onClick={() => onSort("date")}
               >
                 Date{sortIndicator("date")}
               </TableHead>
-              <TableHead className="hidden md:table-cell text-xs font-medium text-muted-foreground w-10">
+              <TableHead className="hidden md:table-cell text-[11px] font-semibold text-muted-foreground uppercase tracking-wider w-12">
                 Type
               </TableHead>
               <TableHead
-                className="cursor-pointer select-none text-right text-xs font-medium text-muted-foreground"
+                className="cursor-pointer select-none text-right text-[11px] font-semibold text-muted-foreground uppercase tracking-wider"
                 onClick={() => onSort("amount")}
               >
                 Amount{sortIndicator("amount")}
               </TableHead>
-              <TableHead className="text-xs font-medium text-muted-foreground">
+              <TableHead className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
                 Merchant
               </TableHead>
-              <TableHead className="text-xs font-medium text-muted-foreground">
+              <TableHead className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
                 Category
               </TableHead>
-              <TableHead className="hidden lg:table-cell text-xs font-medium text-muted-foreground">
+              <TableHead className="hidden lg:table-cell text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
                 Bank
               </TableHead>
             </TableRow>
@@ -104,7 +108,7 @@ export default function TransactionTable({
               <TableRow>
                 <TableCell
                   colSpan={6}
-                  className="text-center py-8 text-muted-foreground text-sm"
+                  className="text-center py-12 text-muted-foreground text-sm"
                 >
                   No transactions found
                 </TableCell>
@@ -118,24 +122,37 @@ export default function TransactionTable({
                   : tx.category_name;
 
                 return (
-                  <TableRow key={tx.id} className="border-b border-border">
-                    <TableCell className="text-sm whitespace-nowrap">
+                  <TableRow
+                    key={tx.id}
+                    className="border-b border-border transition-colors hover:bg-accent/50"
+                  >
+                    <TableCell className="text-sm whitespace-nowrap tabular-nums">
                       {formatDate(tx.transaction_date)}
                     </TableCell>
                     <TableCell className="hidden md:table-cell">
-                      {tx.direction === "debit" ? (
-                        <ArrowUpRight className="h-4 w-4 text-red-500" />
-                      ) : (
-                        <ArrowDownLeft className="h-4 w-4 text-green-500" />
-                      )}
+                      <div className={cn(
+                        "flex h-7 w-7 items-center justify-center rounded-lg",
+                        tx.direction === "debit"
+                          ? "bg-debit-muted"
+                          : "bg-credit-muted",
+                      )}>
+                        {tx.direction === "debit" ? (
+                          <ArrowUpRight className="h-3.5 w-3.5 text-debit" />
+                        ) : (
+                          <ArrowDownLeft className="h-3.5 w-3.5 text-credit" />
+                        )}
+                      </div>
                     </TableCell>
-                    <TableCell className="text-right font-medium tabular-nums text-sm">
-                      {formatCurrency(tx.amount)}
+                    <TableCell className={cn(
+                      "text-right font-semibold tabular-nums text-sm",
+                      tx.direction === "debit" ? "text-debit" : "text-credit",
+                    )}>
+                      {tx.direction === "debit" ? "-" : "+"}{formatCurrency(tx.amount)}
                     </TableCell>
                     <TableCell>
                       {tx.merchant_id ? (
                         <button
-                          className="text-sm hover:underline text-left"
+                          className="text-sm font-medium hover:text-primary transition-colors text-left"
                           onClick={() =>
                             navigate(`/merchant/${tx.merchant_id}`)
                           }
@@ -158,12 +175,12 @@ export default function TransactionTable({
                           val && handleCategoryChange(tx.id, val)
                         }
                       >
-                        <SelectTrigger size="sm" className="min-w-[120px] border-0 shadow-none px-0">
+                        <SelectTrigger size="sm" className="min-w-[120px] border-0 shadow-none px-0 bg-transparent">
                           <SelectValue>
                             {catName ? (
                               <Badge
                                 variant="secondary"
-                                className="text-xs cursor-pointer"
+                                className="text-xs cursor-pointer font-medium"
                               >
                                 {catName}
                               </Badge>
@@ -199,9 +216,10 @@ export default function TransactionTable({
       </div>
 
       {pagination.total_pages > 1 && (
-        <div className="flex items-center justify-between mt-4">
-          <p className="text-xs text-muted-foreground">
-            Page {pagination.page} of {pagination.total_pages} ({pagination.total_count} total)
+        <div className="flex items-center justify-between px-4 py-3 border-t border-border">
+          <p className="text-xs text-muted-foreground tabular-nums">
+            Page {pagination.page} of {pagination.total_pages}
+            <span className="hidden sm:inline"> ({pagination.total_count.toLocaleString("en-IN")} total)</span>
           </p>
           <div className="flex gap-1">
             <Button
@@ -209,16 +227,18 @@ export default function TransactionTable({
               size="icon-sm"
               disabled={pagination.page <= 1}
               onClick={() => onPageChange(pagination.page - 1)}
+              className="h-7 w-7"
             >
-              <ChevronLeft className="h-4 w-4" />
+              <ChevronLeft className="h-3.5 w-3.5" />
             </Button>
             <Button
               variant="outline"
               size="icon-sm"
               disabled={pagination.page >= pagination.total_pages}
               onClick={() => onPageChange(pagination.page + 1)}
+              className="h-7 w-7"
             >
-              <ChevronRight className="h-4 w-4" />
+              <ChevronRight className="h-3.5 w-3.5" />
             </Button>
           </div>
         </div>

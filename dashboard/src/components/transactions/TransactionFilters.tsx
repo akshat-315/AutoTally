@@ -63,17 +63,17 @@ export default function TransactionFilters({ filters, onChange }: Props) {
   };
 
   return (
-    <div className="flex flex-wrap items-center gap-3">
+    <div className="flex flex-wrap items-center gap-2">
       {/* Direction pills */}
-      <div className="flex gap-1">
+      <div className="flex rounded-lg border border-border p-0.5 bg-card">
         {directions.map((d, i) => (
           <button
             key={d}
             className={cn(
-              "rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
+              "rounded-md px-3 py-1.5 text-xs font-medium transition-all duration-200",
               filters.direction === d
-                ? "bg-foreground text-background"
-                : "bg-muted text-muted-foreground hover:bg-accent",
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground",
             )}
             onClick={() => set("direction", d)}
           >
@@ -87,7 +87,7 @@ export default function TransactionFilters({ filters, onChange }: Props) {
         value={filters.category_id || "__all__"}
         onValueChange={(val) => set("category_id", !val || val === "__all__" ? "" : val)}
       >
-        <SelectTrigger size="sm" className="min-w-[140px]">
+        <SelectTrigger size="sm" className="min-w-[140px] bg-card">
           <SelectValue placeholder="All categories" />
         </SelectTrigger>
         <SelectContent>
@@ -102,12 +102,12 @@ export default function TransactionFilters({ filters, onChange }: Props) {
 
       {/* Search */}
       <div className="relative">
-        <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+        <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground pointer-events-none" />
         <Input
           placeholder="Search merchant..."
           value={filters.search}
           onChange={(e) => set("search", e.target.value)}
-          className="w-full sm:w-48 h-8 pl-8 text-xs"
+          className="w-full sm:w-48 h-8 pl-8 text-xs bg-card"
         />
       </div>
 
@@ -119,9 +119,9 @@ export default function TransactionFilters({ filters, onChange }: Props) {
               variant="outline"
               size="sm"
               className={cn(
-                "h-8 gap-1.5",
+                "h-8 gap-1.5 bg-card",
                 (filters.min_amount || filters.max_amount) &&
-                  "border-foreground/30",
+                  "border-primary/40 text-primary",
               )}
             />
           }
@@ -141,7 +141,7 @@ export default function TransactionFilters({ filters, onChange }: Props) {
               onChange={(e) => set("min_amount", e.target.value)}
               className="h-8 text-xs"
             />
-            <span className="text-muted-foreground text-xs">—</span>
+            <span className="text-muted-foreground text-xs shrink-0">to</span>
             <Input
               type="number"
               placeholder="Max"
@@ -157,7 +157,7 @@ export default function TransactionFilters({ filters, onChange }: Props) {
       {hasActiveFilters && (
         <button
           onClick={clearAll}
-          className="flex items-center gap-1 rounded-full px-2.5 py-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+          className="flex items-center gap-1 rounded-full px-2.5 py-1 text-xs text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
         >
           <X className="h-3 w-3" />
           Clear

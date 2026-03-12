@@ -10,11 +10,15 @@ interface Props {
 
 export default function EmptyState({ icon: Icon, title, description, className }: Props) {
   return (
-    <div className={cn("flex flex-col items-center justify-center py-16 text-center", className)}>
-      {Icon && <Icon className="h-10 w-10 text-muted-foreground/40 mb-3" />}
-      <p className="text-sm font-medium text-muted-foreground">{title}</p>
+    <div className={cn("flex flex-col items-center justify-center py-20 text-center", className)}>
+      {Icon && (
+        <div className="mb-4 rounded-2xl bg-muted p-4">
+          <Icon className="h-8 w-8 text-muted-foreground/50" />
+        </div>
+      )}
+      <p className="text-sm font-medium text-foreground">{title}</p>
       {description && (
-        <p className="text-xs text-muted-foreground/70 mt-1 max-w-xs">{description}</p>
+        <p className="text-xs text-muted-foreground mt-1.5 max-w-[280px]">{description}</p>
       )}
     </div>
   );

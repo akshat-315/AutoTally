@@ -65,7 +65,7 @@ export default function MerchantDetailPage() {
   };
 
   if (loading && !data) {
-    return <Skeleton className="h-96 w-full" />;
+    return <Skeleton className="h-96 w-full rounded-xl" />;
   }
 
   if (!data) {
@@ -75,56 +75,72 @@ export default function MerchantDetailPage() {
   return (
     <div className="space-y-6">
       {/* Breadcrumb */}
-      <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-        <Link to="/merchants" className="hover:text-foreground transition-colors">
+      <nav className="flex items-center gap-1.5 text-sm">
+        <Link to="/merchants" className="text-muted-foreground hover:text-foreground transition-colors">
           Merchants
         </Link>
-        <ChevronRight className="h-3.5 w-3.5" />
-        <span className="text-foreground font-medium">
+        <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+        <span className="font-medium">
           {data.display_name || data.merchant_name}
         </span>
-      </div>
+      </nav>
 
-      {/* Metadata */}
-      <div className="space-y-2">
-        <div className="flex flex-wrap items-center gap-2">
-          {data.category_name ? (
-            <Badge variant="secondary">{data.category_name}</Badge>
-          ) : (
-            <Select
-              value=""
-              onValueChange={(val) => {
-                const catId = Number(val);
-                if (!isNaN(catId)) handleCategorize(catId);
-              }}
-            >
-              <SelectTrigger size="sm" className="w-auto min-w-[140px]">
-                <SelectValue placeholder="Set category..." />
-              </SelectTrigger>
-              <SelectContent>
-                {categories.map((c) => (
-                  <SelectItem key={c.id} value={String(c.id)}>
-                    {c.icon ? `${c.icon} ` : ""}{c.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
+      {/* Merchant header card */}
+      <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary text-sm font-bold">
+            {(data.display_name || data.merchant_name).slice(0, 2).toUpperCase()}
+          </div>
+          <div className="min-w-0 flex-1">
+            <h2 className="text-lg font-semibold">
+              {data.display_name || data.merchant_name}
+            </h2>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-xs text-muted-foreground">
+              {data.category_name ? (
+                <Badge variant="secondary" className="font-medium">{data.category_name}</Badge>
+              ) : (
+                <Select
+                  value=""
+                  onValueChange={(val) => {
+                    const catId = Number(val);
+                    if (!isNaN(catId)) handleCategorize(catId);
+                  }}
+                >
+                  <SelectTrigger size="sm" className="w-auto min-w-[140px]">
+                    <SelectValue placeholder="Set category..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map((c) => (
+                      <SelectItem key={c.id} value={String(c.id)}>
+                        {c.icon ? `${c.icon} ` : ""}{c.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+              {data.vpa && (
+                <span className="font-mono text-[11px]">{data.vpa}</span>
+              )}
+              {data.variants.length > 1 && (
+                <span>{data.variants.length} variants</span>
+              )}
+            </div>
+          </div>
         </div>
-        {(data.vpa || data.variants.length > 1) && (
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
-            {data.vpa && (
-              <span className="font-mono">{data.vpa}</span>
-            )}
-            {data.variants.length > 1 && (
-              <span>
-                {data.variants.length} variants:{" "}
-                {data.variants
-                  .map((v) => (v as Record<string, string>).name || "")
-                  .filter(Boolean)
-                  .join(", ")}
-              </span>
-            )}
+
+        {data.variants.length > 1 && (
+          <div className="mt-3 pt-3 border-t border-border">
+            <p className="text-[11px] text-muted-foreground mb-1.5 font-medium uppercase tracking-wider">Variants</p>
+            <div className="flex flex-wrap gap-1.5">
+              {data.variants.map((v, i) => {
+                const name = (v as Record<string, string>).name;
+                return name ? (
+                  <Badge key={i} variant="outline" className="text-[11px] font-normal">
+                    {name}
+                  </Badge>
+                ) : null;
+              })}
+            </div>
           </div>
         )}
       </div>
@@ -134,12 +150,12 @@ export default function MerchantDetailPage() {
           {
             label: "Total Debited",
             value: formatCurrency(data.total_debited),
-            color: "text-red-500",
+            color: "text-debit",
           },
           {
             label: "Total Credited",
             value: formatCurrency(data.total_credited),
-            color: "text-green-500",
+            color: "text-credit",
           },
           {
             label: "Transactions",

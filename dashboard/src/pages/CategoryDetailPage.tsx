@@ -40,7 +40,7 @@ export default function CategoryDetailPage() {
   };
 
   if (loading && !data) {
-    return <Skeleton className="h-96 w-full" />;
+    return <Skeleton className="h-96 w-full rounded-xl" />;
   }
 
   if (!data) {
@@ -50,27 +50,28 @@ export default function CategoryDetailPage() {
   return (
     <div className="space-y-6">
       {/* Breadcrumb */}
-      <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-        <Link to="/categories" className="hover:text-foreground transition-colors">
+      <nav className="flex items-center gap-1.5 text-sm">
+        <Link to="/categories" className="text-muted-foreground hover:text-foreground transition-colors">
           Categories
         </Link>
-        <ChevronRight className="h-3.5 w-3.5" />
-        <span className="text-foreground font-medium">
-          {data.icon ? `${data.icon} ` : ""}{data.category_name}
+        <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+        <span className="font-medium flex items-center gap-1.5">
+          {data.icon && <span className="text-base">{data.icon}</span>}
+          {data.category_name}
         </span>
-      </div>
+      </nav>
 
       <StatRow
         stats={[
           {
             label: "Total Debited",
             value: formatCurrency(data.total_debited),
-            color: "text-red-500",
+            color: "text-debit",
           },
           {
             label: "Total Credited",
             value: formatCurrency(data.total_credited),
-            color: "text-green-500",
+            color: "text-credit",
           },
           {
             label: "Transactions",

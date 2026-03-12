@@ -20,12 +20,10 @@ export default function AppLayout({ children }: { children: ReactNode }) {
     localStorage.setItem(STORAGE_KEY, String(collapsed));
   }, [collapsed]);
 
-  // Close mobile menu on route change
   useEffect(() => {
     setMobileOpen(false);
   }, [location.pathname]);
 
-  // Track md breakpoint
   useEffect(() => {
     const mql = window.matchMedia("(min-width: 768px)");
     const handler = (e: MediaQueryListEvent) => setIsMd(e.matches);
@@ -43,11 +41,13 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           onMobileClose={() => setMobileOpen(false)}
         />
         <div
-          className="min-h-screen transition-[margin-left] duration-200"
-          style={{ marginLeft: isMd ? (collapsed ? "3.5rem" : "15rem") : 0 }}
+          className="min-h-screen transition-[margin-left] duration-300 ease-out"
+          style={{ marginLeft: isMd ? (collapsed ? "4rem" : "15rem") : 0 }}
         >
           <TopBar onMobileMenuToggle={() => setMobileOpen((o) => !o)} />
-          <main className="px-4 py-4 sm:px-6 sm:py-6 lg:px-8">{children}</main>
+          <main className="px-4 py-5 sm:px-6 sm:py-6 lg:px-8 max-w-[1400px]">
+            {children}
+          </main>
         </div>
       </div>
     </TooltipProvider>

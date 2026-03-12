@@ -8,8 +8,8 @@ import {
   Tag,
   Sun,
   Moon,
-  PanelLeftClose,
-  PanelLeft,
+  ChevronsLeft,
+  ChevronsRight,
 } from "lucide-react";
 import {
   Tooltip,
@@ -35,38 +35,50 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
   const { pathname } = useLocation();
   const { theme, toggle } = useTheme();
 
-  // Show labels when mobile overlay is open, or when desktop sidebar is expanded
   const showLabels = mobileOpen || !collapsed;
-  // Only show tooltips when collapsed on desktop (not on mobile)
   const showTooltips = collapsed && !mobileOpen;
 
   const isActive = (to: string) =>
     to === "/" ? pathname === "/" : pathname.startsWith(to);
 
+  const navLink = (to: string, label: string, Icon: typeof LayoutDashboard, active: boolean) => (
+    <Link
+      to={to}
+      onClick={mobileOpen ? onMobileClose : undefined}
+      className={cn(
+        "flex items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] font-medium transition-all duration-200",
+        active
+          ? "bg-primary/10 text-primary"
+          : "text-muted-foreground hover:bg-accent hover:text-foreground",
+      )}
+    >
+      <Icon className={cn("h-[18px] w-[18px] shrink-0", active && "text-primary")} />
+      {showLabels && <span className="truncate">{label}</span>}
+    </Link>
+  );
+
   return (
     <>
-      {/* Backdrop — mobile only */}
       {mobileOpen && (
         <div
-          className="fixed inset-0 z-30 bg-black/50 md:hidden"
+          className="fixed inset-0 z-30 bg-black/40 backdrop-blur-sm md:hidden"
           onClick={onMobileClose}
         />
       )}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-40 flex flex-col border-r bg-background transition-all duration-200",
-          // Mobile: slide in/out, always expanded width
+          "fixed inset-y-0 left-0 z-40 flex flex-col bg-sidebar transition-all duration-300 ease-out",
+          "border-r border-sidebar-border",
           "max-md:-translate-x-full max-md:w-60",
           mobileOpen && "max-md:translate-x-0",
-          // Desktop: width based on collapsed state
           "md:translate-x-0",
-          collapsed ? "md:w-14" : "md:w-60",
+          collapsed ? "md:w-16" : "md:w-60",
         )}
       >
         {/* Logo */}
-        <div className="flex h-12 items-center border-b px-3">
-          <Link to="/" className="flex items-center gap-2 overflow-hidden">
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-foreground text-background text-xs font-bold">
+        <div className="flex h-14 items-center px-3">
+          <Link to="/" className="flex items-center gap-2.5 overflow-hidden">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground text-xs font-bold shadow-sm">
               AT
             </span>
             {showLabels && (
@@ -78,24 +90,9 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 space-y-1 px-2 py-3">
+        <nav className="flex-1 space-y-1 px-2 py-4">
           {navItems.map(({ to, label, icon: Icon }) => {
             const active = isActive(to);
-            const link = (
-              <Link
-                key={to}
-                to={to}
-                className={cn(
-                  "flex items-center gap-3 rounded-md px-2.5 py-2 text-sm font-medium transition-colors",
-                  active
-                    ? "bg-accent text-foreground border-l-2 border-foreground -ml-px"
-                    : "text-muted-foreground hover:bg-accent hover:text-foreground",
-                )}
-              >
-                <Icon className="h-4 w-4 shrink-0" />
-                {showLabels && <span className="truncate">{label}</span>}
-              </Link>
-            );
 
             if (showTooltips) {
               return (
@@ -105,51 +102,81 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
                       <Link
                         to={to}
                         className={cn(
-                          "flex items-center gap-3 rounded-md px-2.5 py-2 text-sm font-medium transition-colors",
+                          "flex items-center justify-center rounded-lg p-2.5 transition-all duration-200",
                           active
-                            ? "bg-accent text-foreground border-l-2 border-foreground -ml-px"
+                            ? "bg-primary/10 text-primary"
                             : "text-muted-foreground hover:bg-accent hover:text-foreground",
                         )}
                       />
                     }
                   >
-                    <Icon className="h-4 w-4 shrink-0" />
+                    <Icon className={cn("h-[18px] w-[18px]", active && "text-primary")} />
                   </TooltipTrigger>
                   <TooltipContent side="right">{label}</TooltipContent>
                 </Tooltip>
               );
             }
-            return link;
+            return (
+              <div key={to}>
+                {navLink(to, label, Icon, active)}
+              </div>
+            );
           })}
         </nav>
 
         {/* Bottom actions */}
-        <div className="space-y-1 border-t px-2 py-3">
-          <button
-            onClick={toggle}
-            className="flex w-full items-center gap-3 rounded-md px-2.5 py-2 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-          >
-            {theme === "dark" ? (
-              <Sun className="h-4 w-4 shrink-0" />
-            ) : (
-              <Moon className="h-4 w-4 shrink-0" />
-            )}
-            {showLabels && (
-              <span>{theme === "dark" ? "Light mode" : "Dark mode"}</span>
-            )}
-          </button>
-          {/* Collapse button — desktop only */}
-          <button
-            onClick={onToggle}
-            className="hidden md:flex w-full items-center gap-3 rounded-md px-2.5 py-2 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-          >
-            {collapsed ? (
-              <PanelLeft className="h-4 w-4 shrink-0" />
-            ) : (
-              <PanelLeftClose className="h-4 w-4 shrink-0" />
-            )}
-            {!collapsed && <span>Collapse</span>}
-          </button>
+        <div className="space-y-1 border-t border-sidebar-border px-2 py-3">
+          {showTooltips ? (
+            <>
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <button
+                      onClick={toggle}
+                      className="flex w-full items-center justify-center rounded-lg p-2.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                    />
+                  }
+                >
+                  {theme === "dark" ? <Sun className="h-[18px] w-[18px]" /> : <Moon className="h-[18px] w-[18px]" />}
+                </TooltipTrigger>
+                <TooltipContent side="right">{theme === "dark" ? "Light mode" : "Dark mode"}</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <button
+                      onClick={onToggle}
+                      className="hidden md:flex w-full items-center justify-center rounded-lg p-2.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                    />
+                  }
+                >
+                  <ChevronsRight className="h-[18px] w-[18px]" />
+                </TooltipTrigger>
+                <TooltipContent side="right">Expand</TooltipContent>
+              </Tooltip>
+            </>
+          ) : (
+            <>
+              <button
+                onClick={toggle}
+                className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              >
+                {theme === "dark" ? (
+                  <Sun className="h-[18px] w-[18px] shrink-0" />
+                ) : (
+                  <Moon className="h-[18px] w-[18px] shrink-0" />
+                )}
+                <span>{theme === "dark" ? "Light mode" : "Dark mode"}</span>
+              </button>
+              <button
+                onClick={onToggle}
+                className="hidden md:flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              >
+                <ChevronsLeft className="h-[18px] w-[18px] shrink-0" />
+                <span>Collapse</span>
+              </button>
+            </>
+          )}
         </div>
       </aside>
     </>

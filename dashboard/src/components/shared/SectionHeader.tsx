@@ -3,17 +3,16 @@ import { cn } from "@/lib/utils";
 interface Props {
   children: React.ReactNode;
   className?: string;
+  action?: React.ReactNode;
 }
 
-export default function SectionHeader({ children, className }: Props) {
+export default function SectionHeader({ children, className, action }: Props) {
   return (
-    <h2
-      className={cn(
-        "text-xs font-medium text-muted-foreground uppercase tracking-wide",
-        className,
-      )}
-    >
-      {children}
-    </h2>
+    <div className={cn("flex items-center justify-between", className)}>
+      <h2 className="text-sm font-semibold text-foreground">
+        {children}
+      </h2>
+      {action}
+    </div>
   );
 }

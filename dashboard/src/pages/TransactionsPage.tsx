@@ -84,7 +84,7 @@ export default function TransactionsPage() {
     <div className="space-y-4">
       <TransactionFilters filters={filters} onChange={handleFilterChange} />
       {loading ? (
-        <Skeleton className="h-96 w-full" />
+        <Skeleton className="h-96 w-full rounded-xl" />
       ) : (
         <TransactionTable
           transactions={transactions}
