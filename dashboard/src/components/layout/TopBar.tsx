@@ -1,4 +1,4 @@
-import { useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useDateRange } from "@/hooks/use-date-range";
 import { toISODate } from "@/lib/utils";
 import { cn } from "@/lib/utils";
@@ -69,6 +69,14 @@ export default function TopBar({ onMobileMenuToggle }: Props) {
         >
           <Menu className="h-5 w-5" />
         </button>
+        {/* Mobile-only logo */}
+        <Link to="/" className="md:hidden flex items-center shrink-0">
+          <img
+            src="/logo.png"
+            alt="AutoTally"
+            className="h-8 object-contain dark:invert"
+          />
+        </Link>
         <h1 className="text-base font-semibold tracking-tight">{title}</h1>
       </div>
 

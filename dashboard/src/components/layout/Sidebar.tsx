@@ -77,23 +77,23 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
       >
         {/* Logo */}
         <div className={cn(
-          "flex items-center justify-center border-b border-sidebar-border transition-all duration-300",
-          showLabels ? "h-14 px-5" : "h-14 px-1.5",
+          "flex items-center justify-center transition-all duration-300",
+          showLabels ? "py-6" : "py-4",
         )}>
-          <Link to="/" className="flex items-center justify-center">
+          <Link to="/" className="group">
             <img
               src="/logo.png"
               alt="AutoTally"
               className={cn(
-                "object-contain dark:invert transition-all duration-300",
-                showLabels ? "w-full max-w-[140px]" : "w-full max-w-[48px]",
+                "object-contain dark:invert transition-all duration-500 ease-out group-hover:rotate-[360deg]",
+                showLabels ? "h-16 w-16" : "h-9 w-9",
               )}
             />
           </Link>
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 space-y-1 px-2 py-4">
+        <nav className="flex-1 space-y-1 px-2">
           {navItems.map(({ to, label, icon: Icon }) => {
             const active = isActive(to);
 
