@@ -76,16 +76,19 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
         )}
       >
         {/* Logo */}
-        <div className="flex h-14 items-center px-3">
-          <Link to="/" className="flex items-center gap-2.5 overflow-hidden">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground text-xs font-bold shadow-sm">
-              AT
-            </span>
-            {showLabels && (
-              <span className="text-sm font-semibold tracking-tight whitespace-nowrap">
-                AutoTally
-              </span>
-            )}
+        <div className={cn(
+          "flex items-center justify-center border-b border-sidebar-border transition-all duration-300",
+          showLabels ? "h-14 px-5" : "h-14 px-1.5",
+        )}>
+          <Link to="/" className="flex items-center justify-center">
+            <img
+              src="/logo.png"
+              alt="AutoTally"
+              className={cn(
+                "object-contain dark:invert transition-all duration-300",
+                showLabels ? "w-full max-w-[140px]" : "w-full max-w-[48px]",
+              )}
+            />
           </Link>
         </div>
 
