@@ -39,18 +39,24 @@ class DuplicateSMSError(AutoTallyError):
         super().__init__(f"sms_id={sms_id}: already processed")
 
 
+class NotFoundError(AutoTallyError):
+    def __init__(self, detail: str):
+        super().__init__(detail, status_code=404)
+
+
+class ConflictError(AutoTallyError):
+    def __init__(self, detail: str):
+        super().__init__(detail, status_code=409)
+
+
 class DatabaseError(AutoTallyError):
-    """Wraps SQLAlchemy errors so upper layers don't import sqlalchemy.exc."""
-
-    status_code: int = 500
-
     def __init__(self, operation: str, *, original: Exception | None = None):
         self.operation = operation
         self.original = original
         detail = f"database error during {operation}"
         if original:
             detail += f": {original}"
-        super().__init__(detail)
+        super().__init__(detail, status_code=500)
 
 
 class StartupError(AutoTallyError):

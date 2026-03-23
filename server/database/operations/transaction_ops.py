@@ -12,7 +12,7 @@ from database.operations.dashboard_ops import (
     resolve_date_range,
     _transaction_to_dict,
 )
-from exceptions import DatabaseError
+from exceptions import DatabaseError, NotFoundError
 
 logger = logging.getLogger(__name__)
 
@@ -134,7 +134,7 @@ async def update_transaction_category(
         result = await db.execute(select(Transaction).where(Transaction.id == txn_id))
         txn = result.scalar_one_or_none()
         if not txn:
-            raise DatabaseError(f"transaction id={txn_id} not found")
+            raise NotFoundError(f"Transaction {txn_id} not found")
         txn.category_id = category_id
         txn.category_source = "user_override" if category_id is not None else None
         await db.flush()

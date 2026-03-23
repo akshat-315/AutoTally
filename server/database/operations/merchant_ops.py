@@ -8,7 +8,7 @@ from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from database.models import Merchant, Transaction, Category
-from exceptions import DatabaseError
+from exceptions import DatabaseError, NotFoundError
 
 logger = logging.getLogger(__name__)
 
@@ -147,12 +147,11 @@ async def categorize_merchant(
     result = await db.execute(select(Merchant).where(Merchant.id == merchant_id))
     merchant = result.scalar_one_or_none()
     if not merchant:
-        raise DatabaseError(f"merchant_id={merchant_id} not found")
+        raise NotFoundError(f"Merchant {merchant_id} not found")
 
-    # Verify category exists
     cat_result = await db.execute(select(Category).where(Category.id == category_id))
     if not cat_result.scalar_one_or_none():
-        raise DatabaseError(f"category_id={category_id} not found")
+        raise NotFoundError(f"Category {category_id} not found")
 
     merchant.category_id = category_id
     merchant.times_confirmed += 1

@@ -28,14 +28,12 @@ async def list_categories(db: AsyncSession = Depends(get_db)):
 @router.post("", response_model=CategoryResponse, status_code=201)
 async def create(body: CategoryCreateRequest, db: AsyncSession = Depends(get_db)):
     category = await create_category(db, body.name, body.icon, body.description)
-    result = CategoryResponse(
+    return CategoryResponse(
         id=category.id,
         name=category.name,
         icon=category.icon,
         description=category.description,
     )
-    await db.commit()
-    return result
 
 
 @router.put("/{category_id}", response_model=CategoryResponse)
@@ -47,20 +45,17 @@ async def update(
     category = await update_category(
         db, category_id, body.name, body.icon, body.description
     )
-    result = CategoryResponse(
+    return CategoryResponse(
         id=category.id,
         name=category.name,
         icon=category.icon,
         description=category.description,
     )
-    await db.commit()
-    return result
 
 
 @router.delete("/{category_id}", status_code=204)
 async def delete(category_id: int, db: AsyncSession = Depends(get_db)):
     await delete_category(db, category_id)
-    await db.commit()
 
 
 @router.get("/{category_id}/merchants", response_model=List[MerchantResponse])

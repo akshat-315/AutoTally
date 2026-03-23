@@ -188,8 +188,8 @@ async def cb_categorize(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     async with async_session() as db:
         merchant = await categorize_merchant(db, merchant_id, category_id)
+        merchant_name = merchant.name
         await db.commit()
-        merchant_name = merchant.name 
 
     await query.edit_message_reply_markup(reply_markup=None)
     await query.message.reply_text(
@@ -237,10 +237,9 @@ async def handle_new_category_name(update: Update, context: ContextTypes.DEFAULT
 
     async with async_session() as db:
         cat = await create_category(db, name=category_name)
-        await db.flush()
         merchant = await categorize_merchant(db, merchant_id, cat.id)
+        merchant_name = merchant.name
         await db.commit()
-        merchant_name = merchant.name 
 
     del pending[reply_to.message_id]
 
@@ -284,11 +283,11 @@ async def cb_txn_categorize(update: Update, context: ContextTypes.DEFAULT_TYPE):
     category_id = int(category_id_str)
 
     async with async_session() as db:
-        txn = await update_transaction_category(db, txn_id, category_id)
+        await update_transaction_category(db, txn_id, category_id)
         cat = await get_category_by_id(db, category_id) if category_id else None
+        cat_name = cat.name if cat else "None"
         await db.commit()
 
-    cat_name = cat.name if cat else "None"
     await query.edit_message_reply_markup(reply_markup=None)
     await query.message.reply_text(
         f"✏️ Transaction #{txn_id} overridden to <b>{cat_name}</b>",

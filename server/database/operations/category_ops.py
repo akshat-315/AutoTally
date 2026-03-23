@@ -1,12 +1,12 @@
 import logging
 from typing import Optional
 
-from sqlalchemy import select, func, case
+from sqlalchemy import select, func, case, update
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from database.models import Category, Transaction
-from exceptions import DatabaseError
+from database.models import Category, Merchant, Transaction
+from exceptions import ConflictError, DatabaseError, NotFoundError
 
 logger = logging.getLogger(__name__)
 
@@ -62,7 +62,7 @@ async def create_category(
         await db.flush()
         return category
     except IntegrityError as e:
-        raise DatabaseError(f"Category '{name}' already exists") from e
+        raise ConflictError(f"Category '{name}' already exists") from e
     except SQLAlchemyError as e:
         raise DatabaseError("create_category", original=e) from e
 
@@ -76,7 +76,7 @@ async def update_category(
 ) -> Category:
     category = await get_category_by_id(db, category_id)
     if not category:
-        raise DatabaseError(f"category_id={category_id} not found")
+        raise NotFoundError(f"Category {category_id} not found")
 
     if name is not None:
         category.name = name
@@ -92,6 +92,18 @@ async def update_category(
 async def delete_category(db: AsyncSession, category_id: int) -> None:
     category = await get_category_by_id(db, category_id)
     if not category:
-        raise DatabaseError(f"category_id={category_id} not found")
+        raise NotFoundError(f"Category {category_id} not found")
+
+    await db.execute(
+        update(Merchant)
+        .where(Merchant.category_id == category_id)
+        .values(category_id=None)
+    )
+    await db.execute(
+        update(Transaction)
+        .where(Transaction.category_id == category_id)
+        .values(category_id=None, category_source=None)
+    )
+
     await db.delete(category)
     await db.flush()

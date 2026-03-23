@@ -9,7 +9,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import ValidationError
 
 from database.db import init_db
-from exceptions import AutoTallyError, DatabaseError, StartupError
+from exceptions import AutoTallyError, StartupError
 from logging_config import setup_logging
 from services.telegram.bot import start_bot, stop_bot
 from routers import sms, merchants, categories, dashboard, transactions

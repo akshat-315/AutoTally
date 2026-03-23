@@ -8,7 +8,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from database.models import Transaction, Merchant, Category
-from exceptions import DatabaseError
+from exceptions import DatabaseError, NotFoundError
 
 logger = logging.getLogger(__name__)
 
@@ -236,7 +236,7 @@ async def get_category_detail(
         )
         category = cat_result.scalar_one_or_none()
         if not category:
-            raise DatabaseError(f"category_id={category_id} not found")
+            raise NotFoundError(f"Category {category_id} not found")
 
         date_cond = _date_filter(start, end)
         cat_cond = Transaction.category_id == category_id
@@ -294,7 +294,7 @@ async def get_category_detail(
                 "total_pages": total_pages,
             },
         }
-    except DatabaseError:
+    except (DatabaseError, NotFoundError):
         raise
     except SQLAlchemyError as e:
         raise DatabaseError("get_category_detail", original=e) from e
@@ -315,7 +315,7 @@ async def get_merchant_detail(
         )
         merchant = m_result.scalar_one_or_none()
         if not merchant:
-            raise DatabaseError(f"merchant_id={merchant_id} not found")
+            raise NotFoundError(f"Merchant {merchant_id} not found")
 
         # Category name
         cat_name = None
@@ -393,7 +393,7 @@ async def get_merchant_detail(
                 "total_pages": total_pages,
             },
         }
-    except DatabaseError:
+    except (DatabaseError, NotFoundError):
         raise
     except SQLAlchemyError as e:
         raise DatabaseError("get_merchant_detail", original=e) from e

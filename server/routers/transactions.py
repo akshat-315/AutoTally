@@ -56,6 +56,4 @@ async def update_category(
     db: AsyncSession = Depends(get_db),
 ):
     txn = await update_transaction_category(db, txn_id, body.category_id)
-    result = {"id": txn.id, "category_id": txn.category_id, "category_source": txn.category_source}
-    await db.commit()
-    return result
+    return {"id": txn.id, "category_id": txn.category_id, "category_source": txn.category_source}

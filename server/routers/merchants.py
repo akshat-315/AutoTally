@@ -49,7 +49,7 @@ async def categorize(
         cat_row = cat_result.one_or_none()
         cat_name = cat_row[0] if cat_row else None
 
-    result = {
+    return {
         "id": merchant.id,
         "name": merchant.name,
         "display_name": merchant.display_name,
@@ -62,5 +62,3 @@ async def categorize(
         "last_seen": merchant.last_seen.isoformat() if merchant.last_seen else None,
         "transaction_count": 0,
     }
-    await db.commit()
-    return result
