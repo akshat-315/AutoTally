@@ -1,7 +1,7 @@
 import logging
-from typing import List
+from typing import List, Optional
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from database.db import get_db
@@ -20,8 +20,12 @@ router = APIRouter(prefix="/api/v1/categories", tags=["categories"])
 
 
 @router.get("", response_model=List[CategoryResponse])
-async def list_categories(db: AsyncSession = Depends(get_db)):
-    categories = await get_all_categories(db)
+async def list_categories(
+    start_date: Optional[str] = Query(None),
+    end_date: Optional[str] = Query(None),
+    db: AsyncSession = Depends(get_db),
+):
+    categories = await get_all_categories(db, start_date=start_date, end_date=end_date)
     return [CategoryResponse(**c) for c in categories]
 
 

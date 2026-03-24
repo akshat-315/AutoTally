@@ -56,7 +56,9 @@ async def _send_single(bot, tx: dict, categories: list[dict]) -> None:
         )
     else:
         lines.append("Category: <i>Uncategorized</i>")
-        keyboard = _build_category_keyboard(tx.get("merchant_id"), categories)
+        # Always use per-transaction categorization from Telegram.
+        # Merchant-level categorization should be done from the dashboard.
+        keyboard = _build_txn_category_keyboard(txn_id, categories) if txn_id else None
         await bot.send_message(
             chat_id=TELEGRAM_CHAT_ID,
             text="\n".join(lines),
@@ -87,20 +89,3 @@ def _build_txn_category_keyboard(txn_id: int, categories: list[dict]) -> InlineK
     return InlineKeyboardMarkup(rows)
 
 
-def _build_category_keyboard(merchant_id: int | None, categories: list[dict]) -> InlineKeyboardMarkup | None:
-    if not merchant_id:
-        return None
-
-    buttons = []
-    for cat in categories:
-        icon = cat["icon"] or ""
-        label = f"{icon} {cat['name']}".strip()
-        buttons.append(
-            InlineKeyboardButton(label, callback_data=f"cat:{merchant_id}:{cat['id']}")
-        )
-
-    # 2 buttons per row
-    rows = [buttons[i:i + 2] for i in range(0, len(buttons), 2)]
-    rows.append([InlineKeyboardButton("➕ Create New", callback_data=f"newcat:{merchant_id}")])
-
-    return InlineKeyboardMarkup(rows)

@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useDateRange } from "@/hooks/use-date-range";
 import {
   fetchCategories,
   createCategory,
@@ -22,20 +23,21 @@ import EmptyState from "@/components/shared/EmptyState";
 
 export default function CategoriesPage() {
   const navigate = useNavigate();
+  const { startDate, endDate } = useDateRange();
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
 
-  const load = () => {
+  const load = useCallback(() => {
     setLoading(true);
-    fetchCategories()
+    fetchCategories(startDate, endDate)
       .then(setCategories)
       .finally(() => setLoading(false));
-  };
+  }, [startDate, endDate]);
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [load]);
 
   const handleCreate = async (data: { name: string; icon: string; description: string }) => {
     await createCategory(data);

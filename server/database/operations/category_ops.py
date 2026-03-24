@@ -11,7 +11,19 @@ from exceptions import ConflictError, DatabaseError, NotFoundError
 logger = logging.getLogger(__name__)
 
 
-async def get_all_categories(db: AsyncSession) -> list[dict]:
+async def get_all_categories(
+    db: AsyncSession,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+) -> list[dict]:
+    join_conditions = [Transaction.category_id == Category.id]
+    if start_date:
+        join_conditions.append(Transaction.transaction_date >= start_date)
+    if end_date:
+        join_conditions.append(Transaction.transaction_date <= end_date)
+
+    from sqlalchemy import and_
+
     stmt = (
         select(
             Category,
@@ -26,7 +38,7 @@ async def get_all_categories(db: AsyncSession) -> list[dict]:
                 0,
             ).label("total_debited"),
         )
-        .outerjoin(Transaction, Transaction.category_id == Category.id)
+        .outerjoin(Transaction, and_(*join_conditions))
         .group_by(Category.id)
         .order_by(Category.name)
     )

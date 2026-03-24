@@ -87,8 +87,11 @@ export function fetchMerchantDetail(
   });
 }
 
-export function fetchCategories() {
-  return get<Category[]>("/api/v1/categories");
+export function fetchCategories(startDate?: string, endDate?: string) {
+  const params: Record<string, string> = {};
+  if (startDate) params.start_date = startDate;
+  if (endDate) params.end_date = endDate;
+  return get<Category[]>("/api/v1/categories", Object.keys(params).length > 0 ? params : undefined);
 }
 
 export function fetchAllMerchants() {
