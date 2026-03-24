@@ -65,14 +65,14 @@ export default function TransactionFilters({ filters, onChange }: Props) {
   return (
     <div className="flex flex-wrap items-center gap-2">
       {/* Direction pills */}
-      <div className="flex rounded-lg border border-border p-0.5 bg-card">
+      <div className="flex rounded border border-border p-0.5 bg-card">
         {directions.map((d, i) => (
           <button
             key={d}
             className={cn(
-              "rounded-md px-3 py-1.5 text-xs font-medium transition-all duration-200",
+              "rounded px-2.5 py-1 text-[11px] font-medium transition-colors",
               filters.direction === d
-                ? "bg-primary text-primary-foreground shadow-sm"
+                ? "bg-primary text-primary-foreground"
                 : "text-muted-foreground hover:text-foreground",
             )}
             onClick={() => set("direction", d)}
@@ -87,7 +87,7 @@ export default function TransactionFilters({ filters, onChange }: Props) {
         value={filters.category_id || "__all__"}
         onValueChange={(val) => set("category_id", !val || val === "__all__" ? "" : val)}
       >
-        <SelectTrigger size="sm" className="min-w-[140px] bg-card">
+        <SelectTrigger size="sm" className="min-w-[130px] bg-card text-[11px]">
           <SelectValue placeholder="All categories" />
         </SelectTrigger>
         <SelectContent>
@@ -102,12 +102,12 @@ export default function TransactionFilters({ filters, onChange }: Props) {
 
       {/* Search */}
       <div className="relative">
-        <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+        <Search className="absolute left-2 top-1/2 h-3 w-3 -translate-y-1/2 text-muted-foreground pointer-events-none" />
         <Input
           placeholder="Search merchant..."
           value={filters.search}
           onChange={(e) => set("search", e.target.value)}
-          className="w-full sm:w-48 h-8 pl-8 text-xs bg-card"
+          className="w-full sm:w-44 h-7 pl-7 text-[11px] bg-card"
         />
       </div>
 
@@ -119,18 +119,18 @@ export default function TransactionFilters({ filters, onChange }: Props) {
               variant="outline"
               size="sm"
               className={cn(
-                "h-8 gap-1.5 bg-card",
+                "h-7 gap-1 bg-card text-[11px]",
                 (filters.min_amount || filters.max_amount) &&
                   "border-primary/40 text-primary",
               )}
             />
           }
         >
-          <SlidersHorizontal className="h-3.5 w-3.5" />
-          <span className="text-xs">Amount</span>
+          <SlidersHorizontal className="h-3 w-3" />
+          <span>Amount</span>
         </PopoverTrigger>
-        <PopoverContent className="w-56 p-3" align="start">
-          <p className="text-xs font-medium text-muted-foreground mb-2">
+        <PopoverContent className="w-52 p-3" align="start">
+          <p className="text-[11px] font-medium text-muted-foreground mb-2">
             Amount Range
           </p>
           <div className="flex items-center gap-2">
@@ -139,15 +139,15 @@ export default function TransactionFilters({ filters, onChange }: Props) {
               placeholder="Min"
               value={filters.min_amount}
               onChange={(e) => set("min_amount", e.target.value)}
-              className="h-8 text-xs"
+              className="h-7 text-[11px]"
             />
-            <span className="text-muted-foreground text-xs shrink-0">to</span>
+            <span className="text-muted-foreground text-[11px] shrink-0">to</span>
             <Input
               type="number"
               placeholder="Max"
               value={filters.max_amount}
               onChange={(e) => set("max_amount", e.target.value)}
-              className="h-8 text-xs"
+              className="h-7 text-[11px]"
             />
           </div>
         </PopoverContent>
@@ -157,7 +157,7 @@ export default function TransactionFilters({ filters, onChange }: Props) {
       {hasActiveFilters && (
         <button
           onClick={clearAll}
-          className="flex items-center gap-1 rounded-full px-2.5 py-1 text-xs text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+          className="flex items-center gap-1 px-2 py-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
         >
           <X className="h-3 w-3" />
           Clear

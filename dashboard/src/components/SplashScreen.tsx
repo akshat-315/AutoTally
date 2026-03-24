@@ -47,7 +47,7 @@ export default function SplashScreen({ onDone }: { onDone: () => void }) {
           position: showLogo ? "absolute" : "relative",
         }}
       >
-        <span className="font-mono text-lg tracking-[0.3em] text-foreground/80">
+        <span className="font-serif text-xl tracking-[0.3em] text-foreground/80">
           {typed}
         </span>
         {(phase === "typing" || phase === "cursor") && (
@@ -67,8 +67,8 @@ export default function SplashScreen({ onDone }: { onDone: () => void }) {
           alt="Tally"
           className="object-contain dark:invert"
           style={{
-            width: 128,
-            height: 128,
+            width: 100,
+            height: 100,
             animation: "splash-spin 2.6s cubic-bezier(0.4, 0, 0.2, 1) forwards",
           }}
         />

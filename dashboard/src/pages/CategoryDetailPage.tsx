@@ -40,7 +40,7 @@ export default function CategoryDetailPage() {
   };
 
   if (loading && !data) {
-    return <Skeleton className="h-96 w-full rounded-xl" />;
+    return <Skeleton className="h-96 w-full rounded" />;
   }
 
   if (!data) {
@@ -48,15 +48,15 @@ export default function CategoryDetailPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* Breadcrumb */}
-      <nav className="flex items-center gap-1.5 text-sm">
+      <nav className="flex items-center gap-1.5 text-[13px]">
         <Link to="/categories" className="text-muted-foreground hover:text-foreground transition-colors">
           Categories
         </Link>
-        <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+        <ChevronRight className="h-3 w-3 text-muted-foreground" />
         <span className="font-medium flex items-center gap-1.5">
-          {data.icon && <span className="text-base">{data.icon}</span>}
+          {data.icon && <span>{data.icon}</span>}
           {data.category_name}
         </span>
       </nav>

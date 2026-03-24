@@ -16,7 +16,7 @@ export default function StatRow({ stats, className }: Props) {
   return (
     <div
       className={cn(
-        "grid gap-4",
+        "grid gap-px border border-border rounded bg-border",
         stats.length <= 3 ? "grid-cols-1 sm:grid-cols-3" : "grid-cols-2 sm:grid-cols-4",
         className,
       )}
@@ -24,16 +24,16 @@ export default function StatRow({ stats, className }: Props) {
       {stats.map((s) => (
         <div
           key={s.label}
-          className="rounded-xl border border-border bg-card p-4 shadow-sm"
+          className="bg-card p-4"
         >
-          <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
+          <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-widest">
             {s.label}
           </p>
-          <p className={cn("text-2xl font-bold tabular-nums mt-1.5 tracking-tight", s.color)}>
+          <p className={cn("font-serif text-xl tabular-nums mt-1.5 tracking-tight", s.color)}>
             {s.value}
           </p>
           {s.sub && (
-            <p className="text-xs text-muted-foreground mt-1">{s.sub}</p>
+            <p className="text-[11px] text-muted-foreground mt-1">{s.sub}</p>
           )}
         </div>
       ))}

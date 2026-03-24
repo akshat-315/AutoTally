@@ -9,7 +9,7 @@ interface Props {
 export default function SectionHeader({ children, className, action }: Props) {
   return (
     <div className={cn("flex items-center justify-between", className)}>
-      <h2 className="text-sm font-semibold text-foreground">
+      <h2 className="text-sm font-semibold">
         {children}
       </h2>
       {action}
